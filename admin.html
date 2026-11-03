@@ -11,8 +11,13 @@
 <main>
 <h1>Pannello <em>admin</em></h1>
 
-<section id="login">
-  <p class="lead">Inserisci la password per verificare i codici.</p>
+<!-- Stato del codice scansionato, visibile a chiunque (sola lettura: non lo consuma) -->
+<section id="status" hidden>
+  <div id="statusMsg" aria-live="polite"></div>
+</section>
+
+<section id="login" hidden>
+  <p class="lead">Sei del Comitato? Accedi per convalidare i codici. Il telefono resta collegato per 12 ore.</p>
   <label class="field" for="pw">Password</label>
   <input id="pw" type="password" autocomplete="current-password">
   <button id="enter">Accedi</button>
@@ -20,22 +25,45 @@
 </section>
 
 <section id="panel" hidden>
-  <p class="lead">Inserisci il codice e premi il pulsante: se è valido viene segnato come usato.</p>
-  <label class="field" for="code">Codice da verificare</label>
+  <p class="lead">Collegato. Scansionando il QR di un codice, questo viene convalidato subito e segnato come usato. Puoi anche scriverlo qui sotto.</p>
+  <div id="res" aria-live="polite"></div>
+  <label class="field" for="code">Codice da convalidare</label>
   <input id="code" type="text" autocomplete="off" placeholder="XXXX-XXXX">
-  <button id="check">Verifica codice</button>
-  <div id="res" aria-live="polite" style="margin-top:18px"></div>
+  <div class="actions" style="margin-top:0">
+    <button id="check">Convalida codice</button>
+    <button id="logout" class="ghost">Esci</button>
+  </div>
 </section>
 </main>
 <script>
 const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev";
 const $ = (id) => document.getElementById(id);
-let password = "";
-const call = (path, body) => fetch(API + path, {
+
+// Il telefono ricorda solo un "gettone" di sessione (12 ore), mai la password.
+const saved = {
+  get() { try { return localStorage.getItem("adminToken") || ""; } catch { return ""; } },
+  set(v) { try { localStorage.setItem("adminToken", v); } catch {} },
+  clear() { try { localStorage.removeItem("adminToken"); } catch {} }
+};
+let token = saved.get();
+let pendingCode = ""; // codice arrivato dal QR (#CODICE)
+try { pendingCode = decodeURIComponent(location.hash.slice(1)); } catch {}
+
+const api = (path, body) => fetch(API + path, {
   method: body ? "POST" : "GET",
-  headers: { "Authorization": "Bearer " + password, "Content-Type": "application/json" },
+  headers: Object.assign({ "Content-Type": "application/json" }, token ? { Authorization: "Bearer " + token } : {}),
   body: body ? JSON.stringify(body) : undefined });
 const show = (el, cls, text) => { el.innerHTML = '<p class="msg ' + cls + '"></p>'; el.firstChild.textContent = text; };
+const forget = () => { token = ""; saved.clear(); };
+const clearHash = () => { pendingCode = ""; history.replaceState(null, "", location.pathname + location.search); };
+
+function showCode(el, d, asAdmin) {
+  if (d.status === "valid")
+    show(el, "ok", asAdmin ? "Codice valido (" + d.code + "). Ora è segnato come usato." : "Codice valido: non ancora utilizzato.");
+  else if (d.status === "used")
+    show(el, "ko", "Codice già utilizzato il " + new Date(d.used).toLocaleString("it-IT") + ".");
+  else show(el, "ko", "Codice non valido.");
+}
 
 // Testo da mostrare quando il server rifiuta l'accesso (password errata o blocco temporaneo)
 async function denied(r) {
@@ -46,27 +74,59 @@ async function denied(r) {
   return "Password errata. Tentativi rimasti: " + d.left + ".";
 }
 
-$("enter").onclick = async () => {
-  password = $("pw").value;
+// Chi non e' collegato vede solo lo stato del codice, senza consumarlo
+async function publicStatus() {
+  $("status").hidden = false;
+  try { showCode($("statusMsg"), await (await api("/api/status", { code: pendingCode })).json(), false); }
+  catch { show($("statusMsg"), "ko", "Server non raggiungibile."); }
+}
+
+function showLogin(msg) {
+  $("panel").hidden = true; $("login").hidden = false;
+  if (msg) show($("loginMsg"), "ko", msg);
+  if (pendingCode) publicStatus();
+}
+
+async function verify(code) {
   try {
-    const r = await call("/api/admin/check");
+    const r = await api("/api/admin/verify", { code });
+    if (r.status === 401) { forget(); pendingCode = code; return showLogin("Sessione scaduta: accedi di nuovo."); }
+    showCode($("res"), await r.json(), true);
+  } catch { show($("res"), "ko", "Server non raggiungibile."); }
+}
+
+function enterPanel() {
+  $("login").hidden = true; $("status").hidden = true; $("panel").hidden = false;
+  if (pendingCode) { // scansione del QR da un telefono collegato: convalida subito
+    const c = pendingCode; $("code").value = c; clearHash(); verify(c);
+  }
+}
+
+$("enter").onclick = async () => {
+  try {
+    const r = await api("/api/admin/login", { password: $("pw").value });
     if (!r.ok) return show($("loginMsg"), "ko", await denied(r));
-    $("login").hidden = true; $("panel").hidden = false;
-    $("code").value = decodeURIComponent(location.hash.slice(1)); // precompilato dal QR
+    token = (await r.json()).token; saved.set(token); $("pw").value = "";
+    enterPanel();
   } catch { show($("loginMsg"), "ko", "Server non raggiungibile."); }
 };
 $("pw").onkeydown = (e) => { if (e.key === "Enter") $("enter").click(); };
+$("check").onclick = () => verify($("code").value);
 $("code").onkeydown = (e) => { if (e.key === "Enter") $("check").click(); };
+$("logout").onclick = async () => { try { await api("/api/admin/logout", {}); } catch {} forget(); location.reload(); };
 
-$("check").onclick = async () => {
-  try {
-    const r = await call("/api/admin/verify", { code: $("code").value });
-    if (r.status === 401 || r.status === 429) return show($("res"), "ko", await denied(r));
-    const d = await r.json();
-    if (d.status === "valid") show($("res"), "ok", "Codice valido (" + d.code + "). Ora è segnato come usato.");
-    else if (d.status === "used") show($("res"), "ko", "Codice già usato il " + new Date(d.used).toLocaleString("it-IT") + ".");
-    else show($("res"), "ko", "Codice non valido.");
-  } catch { show($("res"), "ko", "Server non raggiungibile."); }
-};
+// Se la pagina e' gia' aperta e scansioni un altro QR, il nuovo codice arriva solo nell'indirizzo: ricarico.
+window.addEventListener("hashchange", () => { if (location.hash.length > 1) location.reload(); });
+
+(async () => {
+  if (token) {
+    try {
+      const d = await (await api("/api/session")).json();
+      if (d.ok) return enterPanel();
+      forget(); // sessione scaduta o chiusa
+    } catch { /* server non raggiungibile: tengo il gettone */ }
+  }
+  showLogin();
+})();
 </script>
 </body></html>
