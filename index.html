@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quiz sull'HIV</title><link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script></head>
+<body><main>
+<h1>Quiz sull'HIV</h1>
+<p class="lead">Rispondi a tutte le domande. Con almeno 7 risposte giuste ricevi un codice personale, valido una sola volta.</p>
+<div id="quiz"></div>
+<button id="send" hidden>Invia le risposte</button>
+<div id="result" aria-live="polite"></div>
+</main>
+<script>
+const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev"; // <-- il tuo URL Worker
+const $ = (id) => document.getElementById(id);
+let questions = [];
+
+fetch(API + "/api/questions").then(r => r.json()).then(qs => {
+  questions = qs;
+  $("quiz").innerHTML = qs.map((x, i) =>
+    `<fieldset><legend>${x.q}</legend>` +
+    x.o.map((o, j) => `<label><input type="radio" name="q${i}" value="${j}"> ${o}</label>`).join("") +
+    `</fieldset>`).join("");
+  $("send").hidden = false;
+}).catch(() => $("quiz").textContent = "Impossibile caricare il quiz. Riprova più tardi.");
+
+$("send").onclick = async () => {
+  const answers = questions.map((_, i) => {
+    const c = document.querySelector(`input[name=q${i}]:checked`);
+    return c ? Number(c.value) : -1;
+  });
+  const out = $("result");
+  if (answers.includes(-1)) { out.innerHTML = '<p class="msg ko">Rispondi a tutte le domande prima di inviare.</p>'; return; }
+  $("send").disabled = true;
+  try {
+    const r = await (await fetch(API + "/api/submit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers }) })).json();
+    if (r.error) throw new Error(r.error);
+    if (!r.passed) {
+      out.innerHTML = `<p class="msg ko">Hai risposto correttamente a ${r.score} domande su ${r.total}. Ne servono almeno ${r.needed}. Riprova.</p>`;
+      $("send").disabled = false; return;
+    }
+    out.innerHTML = `<p class="msg ok">Ben fatto: ${r.score} su ${r.total}. Ecco il tuo codice, mostralo e non perderlo.</p>
+      <div class="code"></div><div id="qr"></div>`;
+    out.querySelector(".code").textContent = r.code;
+    const adminUrl = new URL("admin.html", location.href).href + "#" + r.code;
+    new QRCode($("qr"), { text: adminUrl, width: 180, height: 180 });
+    $("send").hidden = true;
+  } catch (e) {
+    out.innerHTML = '<p class="msg ko">Invio non riuscito. Riprova.</p>'; $("send").disabled = false;
+  }
+};
+</script></body></html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Pannello admin</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<h1>Pannello admin</h1>
+<section id="login">
+  <label for="pw">Password</label>
+  <input id="pw" type="password" autocomplete="current-password">
+  <button id="enter">Accedi</button>
+  <div id="loginMsg" aria-live="polite"></div>
+</section>
+<section id="panel" hidden>
+  <label for="code">Codice da verificare</label>
+  <input id="code" type="text" autocomplete="off" placeholder="XXXX-XXXX">
+  <button id="check">Verifica e segna come usato</button>
+  <div id="res" aria-live="polite"></div>
+</section>
+</main>
+<script>
+const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev"; // <-- il tuo URL Worker
+const $ = (id) => document.getElementById(id);
+let password = "";
+const call = (path, body) => fetch(API + path, {
+  method: body ? "POST" : "GET",
+  headers: { "Authorization": "Bearer " + password, "Content-Type": "application/json" },
+  body: body ? JSON.stringify(body) : undefined });
+const show = (el, cls, text) => { el.innerHTML = `<p class="msg ${cls}"></p>`; el.firstChild.textContent = text; };
+
+$("enter").onclick = async () => {
+  password = $("pw").value;
+  try {
+    const r = await call("/api/admin/check");
+    if (!r.ok) return show($("loginMsg"), "ko", "Password errata.");
+    $("login").hidden = true; $("panel").hidden = false;
+    $("code").value = decodeURIComponent(location.hash.slice(1)); // precompilato dal QR
+  } catch { show($("loginMsg"), "ko", "Server non raggiungibile."); }
+};
+$("pw").onkeydown = (e) => { if (e.key === "Enter") $("enter").click(); };
+
+$("check").onclick = async () => {
+  try {
+    const r = await call("/api/admin/verify", { code: $("code").value });
+    if (r.status === 401) return show($("res"), "ko", "Sessione scaduta: ricarica la pagina.");
+    const d = await r.json();
+    if (d.status === "valid") show($("res"), "ok", `Codice valido (${d.code}). Ora è segnato come usato.`);
+    else if (d.status === "used") show($("res"), "ko", `Codice già usato il ${new Date(d.used).toLocaleString("it-IT")}.`);
+    else show($("res"), "ko", "Codice non valido.");
+  } catch { show($("res"), "ko", "Server non raggiungibile."); }
+};
+</script></body></html>
