@@ -14,11 +14,21 @@ function shuffle(n){
   return a;
 }
 
+// Titolo: l'ultima parola (dopo l'eventuale apostrofo) va in corsivo rosso, come nel design
+function setTitle(t){
+  const h = $("title"); h.textContent = "";
+  const m = t.match(/^(.*?)([^\s']+)$/);
+  if (m && m[1]) { h.append(m[1]); const em = document.createElement("em"); em.textContent = m[2]; h.append(em); }
+  else h.textContent = t;
+  document.title = t + " · CRI Francavilla Fontana - Oria";
+}
+
 // Scarica le domande attuali (numero e soglia possono cambiare quando il Comitato le modifica)
 async function loadQuestions(){
   const d = await (await fetch(API + "/api/questions")).json();
   if (!d.questions) throw new Error("risposta non valida");
   questions = d.questions; version = d.version; needed = d.needed;
+  setTitle(d.title || "Quiz sull'HIV");
   $("lead").textContent = plural(questions.length, "domanda", "domande") + ", una alla volta. Con almeno " +
     plural(needed, "risposta giusta", "risposte giuste") + " ricevi un codice personale, valido una sola volta.";
 }
@@ -26,7 +36,7 @@ async function loadQuestions(){
 loadQuestions().then(() => {
   $("go").disabled = false;
   $("loadMsg").hidden = true;
-}).catch(() => { $("loadMsg").textContent = "Impossibile caricare il quiz. Riprova più tardi."; });
+}).catch(() => { setTitle("Quiz sull'HIV"); $("loadMsg").textContent = "Impossibile caricare il quiz. Riprova più tardi."; });
 
 function start(){
   order = shuffle(questions.length);

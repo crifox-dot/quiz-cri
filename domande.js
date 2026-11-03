@@ -65,6 +65,7 @@ window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault()
 // ---------- disegno dell'editor ----------
 function render() {
   const y = window.scrollY;
+  $("title").value = quiz.title || "";
   $("pass").value = Number.isNaN(quiz.pass) ? "" : quiz.pass;
   $("pass").max = quiz.questions.length;
   $("passInfo").textContent = "su " + quiz.questions.length + (quiz.questions.length === 1 ? " domanda" : " domande");
@@ -125,6 +126,7 @@ $("addq").onclick = () => {
   const last = areas[areas.length - 1];
   last.scrollIntoView({ block: "center" }); last.focus();
 };
+$("title").oninput = () => { quiz.title = $("title").value; markDirty(); };
 $("pass").oninput = () => { quiz.pass = $("pass").value === "" ? NaN : Number($("pass").value); markDirty(); };
 
 // ---------- accesso e salvataggio ----------
@@ -156,7 +158,7 @@ $("save").onclick = async () => {
   if (!confirm("Pubblicare le modifiche?\nChi sta facendo il quiz in questo momento dovrà ricominciare.")) return;
   $("save").disabled = true;
   try {
-    const r = await api("/api/editor/save", { baseVersion: quiz.version, pass: quiz.pass, questions: quiz.questions });
+    const r = await api("/api/editor/save", { baseVersion: quiz.version, title: quiz.title, pass: quiz.pass, questions: quiz.questions });
     if (r.status === 401) { forget(); showLogin("Sessione scaduta: accedi di nuovo. Le tue modifiche non sono andate perse."); return; }
     const d = await r.json();
     if (!r.ok) { show($("saveMsg"), "ko", d.error || "Pubblicazione non riuscita."); $("save").disabled = false; return; }
