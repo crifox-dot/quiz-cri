@@ -76,3 +76,10 @@ button.danger:hover:not(:disabled){background:#2a1c1a}
   padding:14px 0;margin-top:26px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .state{color:var(--mute);font-size:.95rem;margin-left:auto}
 .state.dirty{color:#ffd28a}
+
+/* senza stili scritti dentro le pagine (richiesto dalla Content-Security-Policy) */
+.plain{border:0;padding:0;margin:0}
+legend.qtext{padding:0}
+.mt18{margin-top:18px}
+.mt22{margin-top:22px}
+.actions.flush{margin-top:0}

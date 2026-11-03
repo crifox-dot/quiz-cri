@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://steep-haze-2da0.cloudflare-vbmev.workers.dev; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#16120f">
 <title>Quiz sull'HIV · CRI Francavilla Fontana - Oria</title>
@@ -20,8 +21,8 @@
 <section id="quiz" hidden>
   <div class="meta"><span id="count"></span></div>
   <div class="progress"><i id="bar"></i></div>
-  <fieldset style="border:0;padding:0;margin:0">
-    <legend class="qtext" id="qtext" style="padding:0"></legend>
+  <fieldset class="plain">
+    <legend class="qtext" id="qtext"></legend>
     <div class="opts" id="opts"></div>
   </fieldset>
   <div class="actions">
@@ -34,117 +35,5 @@
 <section id="result" hidden aria-live="polite"></section>
 
 </main>
-<script>
-const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev";
-const $ = (id) => document.getElementById(id);
-const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
-let questions = [], version = 0, needed = 0;
-let order = [], answers = {}, step = 0; // answers: { idDomanda: indiceRispostaScelta }
-
-// mescola l'ordine delle domande (Fisher-Yates con numeri casuali sicuri)
-function shuffle(n){
-  const a = Array.from({length:n}, (_, i) => i);
-  for (let i = n - 1; i > 0; i--) {
-    const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-// Scarica le domande attuali (numero e soglia possono cambiare quando il Comitato le modifica)
-async function loadQuestions(){
-  const d = await (await fetch(API + "/api/questions")).json();
-  if (!d.questions) throw new Error("risposta non valida");
-  questions = d.questions; version = d.version; needed = d.needed;
-  $("lead").textContent = plural(questions.length, "domanda", "domande") + ", una alla volta. Con almeno " +
-    plural(needed, "risposta giusta", "risposte giuste") + " ricevi un codice personale, valido una sola volta.";
-}
-
-loadQuestions().then(() => {
-  $("go").disabled = false;
-  $("loadMsg").hidden = true;
-}).catch(() => { $("loadMsg").textContent = "Impossibile caricare il quiz. Riprova più tardi."; });
-
-function start(){
-  order = shuffle(questions.length);
-  answers = {};
-  step = 0;
-  $("start").hidden = true; $("result").hidden = true; $("quiz").hidden = false;
-  render();
-}
-
-function render(){
-  const x = questions[order[step]];
-  $("count").textContent = "Domanda " + (step + 1) + " di " + order.length;
-  $("bar").style.width = (step / order.length * 100) + "%";
-  $("qtext").textContent = x.q;
-  const box = $("opts"); box.innerHTML = "";
-  x.o.forEach((t, j) => {
-    const l = document.createElement("label");
-    const r = document.createElement("input");
-    r.type = "radio"; r.name = "opt"; r.value = j; r.checked = answers[x.id] === j;
-    r.onchange = () => { answers[x.id] = j; $("next").disabled = false; };
-    const s = document.createElement("span"); s.textContent = t;
-    l.append(r, s); box.append(l);
-  });
-  $("next").disabled = answers[x.id] === undefined;
-  $("next").textContent = step === order.length - 1 ? "Invia le risposte" : "Avanti";
-  $("back").hidden = step === 0;
-  $("err").innerHTML = "";
-}
-
-function showError(text){
-  $("err").innerHTML = '<p class="msg ko"></p>';
-  $("err").firstChild.textContent = text;
-}
-
-$("go").onclick = start;
-$("back").onclick = () => { step--; render(); };
-$("next").onclick = () => { if (step < order.length - 1) { step++; render(); } else submit(); };
-
-async function submit(){
-  $("next").disabled = true;
-  try {
-    const r = await (await fetch(API + "/api/submit", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ version, answers })
-    })).json();
-    if (r.stale) { // le domande sono state aggiornate mentre rispondevi: si riparte con quelle nuove
-      await loadQuestions(); start();
-      showError("Il quiz è stato aggiornato mentre rispondevi: ricominciamo dalla prima domanda.");
-      return;
-    }
-    if (r.error) { const e = new Error(r.error); e.wait = r.retryAfter; throw e; }
-    showResult(r);
-  } catch (e) {
-    showError(e.wait
-      ? "Troppi invii ravvicinati. Riprova tra circa " + Math.ceil(e.wait / 60) + " minuti."
-      : "Invio non riuscito. Riprova.");
-    $("next").disabled = false;
-  }
-}
-
-function showResult(r){
-  $("quiz").hidden = true;
-  const out = $("result"); out.hidden = false; out.innerHTML = "";
-  const msg = document.createElement("p");
-  if (!r.passed) {
-    msg.className = "msg ko";
-    msg.textContent = "Hai risposto correttamente a " + r.score + " domande su " + r.total + ". Ne servono almeno " + r.needed + ".";
-    const b = document.createElement("button"); b.textContent = "Riprova";
-    b.onclick = start;
-    out.append(msg, b);
-    return;
-  }
-  msg.className = "msg ok";
-  msg.textContent = "Ben fatto: " + r.score + " risposte giuste su " + r.total + ". Ecco il tuo codice.";
-  const code = document.createElement("div"); code.className = "code"; code.textContent = r.code;
-  const qr = document.createElement("div"); qr.className = "qr";
-  const hint = document.createElement("p"); hint.className = "hint";
-  hint.textContent = "Mostra questo codice e non perderlo: vale una sola volta.";
-  out.append(msg, code, qr, hint);
-  const adminUrl = new URL("admin.html", location.href).href + "#" + r.code;
-  qr.innerHTML = qrSvg(adminUrl, 5, 2); // SVG generato qui nel browser, nessun servizio esterno
-}
-</script>
+<script src="index.js"></script>
 </body></html>
