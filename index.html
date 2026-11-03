@@ -12,7 +12,7 @@
 
 <section id="start">
   <h1>Quiz sull'<em>HIV</em></h1>
-  <p class="lead">Otto domande, una alla volta. Con almeno 7 risposte giuste ricevi un codice personale, valido una sola volta.</p>
+  <p class="lead" id="lead">Rispondi alle domande, una alla volta, e ricevi un codice personale valido una sola volta.</p>
   <button id="go" disabled>Inizia il quiz</button>
   <p id="loadMsg" class="hint" aria-live="polite">Caricamento delle domande…</p>
 </section>
@@ -37,7 +37,9 @@
 <script>
 const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev";
 const $ = (id) => document.getElementById(id);
-let questions = [], order = [], answers = [], step = 0;
+const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
+let questions = [], version = 0, needed = 0;
+let order = [], answers = {}, step = 0; // answers: { idDomanda: indiceRispostaScelta }
 
 // mescola l'ordine delle domande (Fisher-Yates con numeri casuali sicuri)
 function shuffle(n){
@@ -49,22 +51,30 @@ function shuffle(n){
   return a;
 }
 
-fetch(API + "/api/questions").then(r => r.json()).then(qs => {
-  questions = qs;
+// Scarica le domande attuali (numero e soglia possono cambiare quando il Comitato le modifica)
+async function loadQuestions(){
+  const d = await (await fetch(API + "/api/questions")).json();
+  if (!d.questions) throw new Error("risposta non valida");
+  questions = d.questions; version = d.version; needed = d.needed;
+  $("lead").textContent = plural(questions.length, "domanda", "domande") + ", una alla volta. Con almeno " +
+    plural(needed, "risposta giusta", "risposte giuste") + " ricevi un codice personale, valido una sola volta.";
+}
+
+loadQuestions().then(() => {
   $("go").disabled = false;
   $("loadMsg").hidden = true;
 }).catch(() => { $("loadMsg").textContent = "Impossibile caricare il quiz. Riprova più tardi."; });
 
 function start(){
   order = shuffle(questions.length);
-  answers = new Array(questions.length).fill(-1); // indicizzate sull'ordine originale
+  answers = {};
   step = 0;
   $("start").hidden = true; $("result").hidden = true; $("quiz").hidden = false;
   render();
 }
 
 function render(){
-  const i = order[step], x = questions[i];
+  const x = questions[order[step]];
   $("count").textContent = "Domanda " + (step + 1) + " di " + order.length;
   $("bar").style.width = (step / order.length * 100) + "%";
   $("qtext").textContent = x.q;
@@ -72,15 +82,20 @@ function render(){
   x.o.forEach((t, j) => {
     const l = document.createElement("label");
     const r = document.createElement("input");
-    r.type = "radio"; r.name = "opt"; r.value = j; r.checked = answers[i] === j;
-    r.onchange = () => { answers[i] = j; $("next").disabled = false; };
+    r.type = "radio"; r.name = "opt"; r.value = j; r.checked = answers[x.id] === j;
+    r.onchange = () => { answers[x.id] = j; $("next").disabled = false; };
     const s = document.createElement("span"); s.textContent = t;
     l.append(r, s); box.append(l);
   });
-  $("next").disabled = answers[i] === -1;
+  $("next").disabled = answers[x.id] === undefined;
   $("next").textContent = step === order.length - 1 ? "Invia le risposte" : "Avanti";
   $("back").hidden = step === 0;
   $("err").innerHTML = "";
+}
+
+function showError(text){
+  $("err").innerHTML = '<p class="msg ko"></p>';
+  $("err").firstChild.textContent = text;
 }
 
 $("go").onclick = start;
@@ -92,15 +107,19 @@ async function submit(){
   try {
     const r = await (await fetch(API + "/api/submit", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers })
+      body: JSON.stringify({ version, answers })
     })).json();
+    if (r.stale) { // le domande sono state aggiornate mentre rispondevi: si riparte con quelle nuove
+      await loadQuestions(); start();
+      showError("Il quiz è stato aggiornato mentre rispondevi: ricominciamo dalla prima domanda.");
+      return;
+    }
     if (r.error) { const e = new Error(r.error); e.wait = r.retryAfter; throw e; }
     showResult(r);
   } catch (e) {
-    $("err").innerHTML = '<p class="msg ko"></p>';
-    $("err").firstChild.textContent = e.wait
+    showError(e.wait
       ? "Troppi invii ravvicinati. Riprova tra circa " + Math.ceil(e.wait / 60) + " minuti."
-      : "Invio non riuscito. Riprova.";
+      : "Invio non riuscito. Riprova.");
     $("next").disabled = false;
   }
 }
