@@ -1,17 +1,56 @@
-:root{--ink:#1b1f2a;--paper:#f6f7f9;--line:#d6dae2;--red:#c8102e;--ok:#17653a}
+:root{
+  --bg:#16120f;--panel:#201a16;--line:#3b332b;
+  --ink:#f4ede3;--mute:#b5a999;
+  --red:#d3141f;--red-hi:#f0434b;--ok:#6fcf97;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.55 system-ui,sans-serif}
-main{max-width:640px;margin:0 auto;padding:32px 20px 64px}
-h1{font:700 2rem/1.15 Georgia,serif;margin:0 0 8px}
-p.lead{margin:0 0 28px;color:#4a5160}
-fieldset{border:0;border-left:3px solid var(--line);margin:0 0 24px;padding:0 0 0 16px}
-legend{font-weight:600;padding:0;margin-bottom:8px;float:left;width:100%}
-fieldset label{display:block;clear:both;padding:6px 0;cursor:pointer}
-input[type=radio]{accent-color:var(--red);margin-right:8px}
-button{background:var(--red);color:#fff;border:0;border-radius:6px;padding:12px 22px;font:600 1rem system-ui;cursor:pointer}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:18px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;min-height:100vh}
+.top{padding:20px 20px 0;max-width:720px;margin:0 auto}
+.top img{display:block;height:44px;width:auto;max-width:100%}
+main{max-width:720px;margin:0 auto;padding:36px 20px 72px}
+h1{font:800 clamp(2.3rem,8vw,3.8rem)/1.02 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;letter-spacing:-.02em;margin:0 0 18px}
+h1 em{font:italic 400 1.12em/1 Georgia,"Times New Roman",serif;color:var(--red-hi);letter-spacing:0}
+.lead{color:var(--mute);margin:0 0 32px;max-width:52ch}
+[hidden]{display:none!important}
+
+/* quiz: una domanda per volta */
+.meta{display:flex;justify-content:space-between;color:var(--mute);font-size:.95rem;margin-bottom:10px}
+.progress{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:34px}
+.progress i{display:block;height:100%;width:0;background:var(--red);transition:width .25s}
+.qtext{font-family:inherit;font-weight:700;font-size:clamp(1.4rem,4.6vw,1.9rem);line-height:1.25;margin:0 0 24px}
+.opts label{display:block;position:relative;border:1px solid var(--line);background:var(--panel);
+  border-radius:14px;padding:16px 18px 16px 52px;margin:0 0 12px;cursor:pointer;
+  transition:border-color .15s,background .15s}
+.opts label:hover{border-color:var(--mute)}
+.opts input{position:absolute;left:18px;top:50%;width:20px;height:20px;margin:-10px 0 0;accent-color:var(--red)}
+.opts label:has(input:checked){border-color:var(--red-hi);background:#2a1c1a}
+.opts label:has(input:focus-visible){outline:3px solid var(--ink);outline-offset:2px}
+
+.actions{display:flex;gap:12px;align-items:center;margin-top:28px}
+button{font-family:inherit;font-weight:700;font-size:1rem;border:0;border-radius:999px;padding:14px 28px;cursor:pointer;
+  background:var(--red);color:#fff}
+button:hover:not(:disabled){background:var(--red-hi)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.ghost:hover{border-color:var(--mute);background:transparent}
 button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-input[type=password],input[type=text]{width:100%;padding:12px;font:inherit;border:1px solid var(--line);border-radius:6px;margin:6px 0 14px}
-.code{font:700 2.2rem/1 ui-monospace,monospace;letter-spacing:.12em;border-left:4px solid var(--red);padding:6px 0 6px 16px;margin:16px 0}
-.msg{margin:20px 0;padding:14px 16px;border-radius:6px;background:#fff;border:1px solid var(--line)}
-.ok{border-color:var(--ok);color:var(--ok)}.ko{border-color:var(--red);color:var(--red)}
-#qr{margin:16px 0}
+
+/* risultato e codice */
+.msg{margin:0 0 22px;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}
+.msg.ok{border-color:var(--ok);color:var(--ok)}
+.msg.ko{border-color:var(--red-hi);color:#ffb3b7}
+.code{font:700 clamp(2rem,9vw,3rem)/1 ui-monospace,"SFMono-Regular",Menlo,monospace;letter-spacing:.1em;
+  border-left:5px solid var(--red);padding:8px 0 8px 18px;margin:8px 0 26px;word-break:break-all}
+.qr{display:inline-block;background:#fff;padding:14px;border-radius:14px}
+.qr svg{display:block;max-width:100%;height:auto}
+.hint{color:var(--mute);font-size:.95rem;margin-top:14px;max-width:46ch}
+
+/* admin */
+label.field{display:block;font-weight:600;margin-bottom:6px}
+input[type=password],input[type=text]{width:100%;padding:14px 16px;font:inherit;color:var(--ink);
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:16px}
+input[type=password]:focus,input[type=text]:focus{border-color:var(--red-hi)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}

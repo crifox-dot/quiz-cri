@@ -1,52 +1,131 @@
 <!DOCTYPE html>
 <html lang="it"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Quiz sull'HIV</title><link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script></head>
-<body><main>
-<h1>Quiz sull'HIV</h1>
-<p class="lead">Rispondi a tutte le domande. Con almeno 7 risposte giuste ricevi un codice personale, valido una sola volta.</p>
-<div id="quiz"></div>
-<button id="send" hidden>Invia le risposte</button>
-<div id="result" aria-live="polite"></div>
+<meta name="theme-color" content="#16120f">
+<title>Quiz sull'HIV · CRI Francavilla Fontana - Oria</title>
+<link rel="stylesheet" href="style.css">
+<script src="qrcode.js"></script>
+</head>
+<body>
+<header class="top"><img src="logo.png" alt="Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria"></header>
+<main>
+
+<section id="start">
+  <h1>Quiz sull'<em>HIV</em></h1>
+  <p class="lead">Otto domande, una alla volta. Con almeno 7 risposte giuste ricevi un codice personale, valido una sola volta.</p>
+  <button id="go" disabled>Inizia il quiz</button>
+  <p id="loadMsg" class="hint" aria-live="polite">Caricamento delle domande…</p>
+</section>
+
+<section id="quiz" hidden>
+  <div class="meta"><span id="count"></span></div>
+  <div class="progress"><i id="bar"></i></div>
+  <fieldset style="border:0;padding:0;margin:0">
+    <legend class="qtext" id="qtext" style="padding:0"></legend>
+    <div class="opts" id="opts"></div>
+  </fieldset>
+  <div class="actions">
+    <button id="back" class="ghost" hidden>Indietro</button>
+    <button id="next" disabled>Avanti</button>
+  </div>
+  <div id="err" aria-live="polite"></div>
+</section>
+
+<section id="result" hidden aria-live="polite"></section>
+
 </main>
 <script>
-const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev"; // <-- il tuo URL Worker
+const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev";
 const $ = (id) => document.getElementById(id);
-let questions = [];
+let questions = [], order = [], answers = [], step = 0;
+
+// mescola l'ordine delle domande (Fisher-Yates con numeri casuali sicuri)
+function shuffle(n){
+  const a = Array.from({length:n}, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 fetch(API + "/api/questions").then(r => r.json()).then(qs => {
   questions = qs;
-  $("quiz").innerHTML = qs.map((x, i) =>
-    `<fieldset><legend>${x.q}</legend>` +
-    x.o.map((o, j) => `<label><input type="radio" name="q${i}" value="${j}"> ${o}</label>`).join("") +
-    `</fieldset>`).join("");
-  $("send").hidden = false;
-}).catch(() => $("quiz").textContent = "Impossibile caricare il quiz. Riprova più tardi.");
+  $("go").disabled = false;
+  $("loadMsg").hidden = true;
+}).catch(() => { $("loadMsg").textContent = "Impossibile caricare il quiz. Riprova più tardi."; });
 
-$("send").onclick = async () => {
-  const answers = questions.map((_, i) => {
-    const c = document.querySelector(`input[name=q${i}]:checked`);
-    return c ? Number(c.value) : -1;
+function start(){
+  order = shuffle(questions.length);
+  answers = new Array(questions.length).fill(-1); // indicizzate sull'ordine originale
+  step = 0;
+  $("start").hidden = true; $("result").hidden = true; $("quiz").hidden = false;
+  render();
+}
+
+function render(){
+  const i = order[step], x = questions[i];
+  $("count").textContent = "Domanda " + (step + 1) + " di " + order.length;
+  $("bar").style.width = (step / order.length * 100) + "%";
+  $("qtext").textContent = x.q;
+  const box = $("opts"); box.innerHTML = "";
+  x.o.forEach((t, j) => {
+    const l = document.createElement("label");
+    const r = document.createElement("input");
+    r.type = "radio"; r.name = "opt"; r.value = j; r.checked = answers[i] === j;
+    r.onchange = () => { answers[i] = j; $("next").disabled = false; };
+    const s = document.createElement("span"); s.textContent = t;
+    l.append(r, s); box.append(l);
   });
-  const out = $("result");
-  if (answers.includes(-1)) { out.innerHTML = '<p class="msg ko">Rispondi a tutte le domande prima di inviare.</p>'; return; }
-  $("send").disabled = true;
+  $("next").disabled = answers[i] === -1;
+  $("next").textContent = step === order.length - 1 ? "Invia le risposte" : "Avanti";
+  $("back").hidden = step === 0;
+  $("err").innerHTML = "";
+}
+
+$("go").onclick = start;
+$("back").onclick = () => { step--; render(); };
+$("next").onclick = () => { if (step < order.length - 1) { step++; render(); } else submit(); };
+
+async function submit(){
+  $("next").disabled = true;
   try {
-    const r = await (await fetch(API + "/api/submit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers }) })).json();
-    if (r.error) throw new Error(r.error);
-    if (!r.passed) {
-      out.innerHTML = `<p class="msg ko">Hai risposto correttamente a ${r.score} domande su ${r.total}. Ne servono almeno ${r.needed}. Riprova.</p>`;
-      $("send").disabled = false; return;
-    }
-    out.innerHTML = `<p class="msg ok">Ben fatto: ${r.score} su ${r.total}. Ecco il tuo codice, mostralo e non perderlo.</p>
-      <div class="code"></div><div id="qr"></div>`;
-    out.querySelector(".code").textContent = r.code;
-    const adminUrl = new URL("admin.html", location.href).href + "#" + r.code;
-    new QRCode($("qr"), { text: adminUrl, width: 180, height: 180 });
-    $("send").hidden = true;
+    const r = await (await fetch(API + "/api/submit", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers })
+    })).json();
+    if (r.error) { const e = new Error(r.error); e.wait = r.retryAfter; throw e; }
+    showResult(r);
   } catch (e) {
-    out.innerHTML = '<p class="msg ko">Invio non riuscito. Riprova.</p>'; $("send").disabled = false;
+    $("err").innerHTML = '<p class="msg ko"></p>';
+    $("err").firstChild.textContent = e.wait
+      ? "Troppi invii ravvicinati. Riprova tra circa " + Math.ceil(e.wait / 60) + " minuti."
+      : "Invio non riuscito. Riprova.";
+    $("next").disabled = false;
   }
-};
-</script></body></html>
+}
+
+function showResult(r){
+  $("quiz").hidden = true;
+  const out = $("result"); out.hidden = false; out.innerHTML = "";
+  const msg = document.createElement("p");
+  if (!r.passed) {
+    msg.className = "msg ko";
+    msg.textContent = "Hai risposto correttamente a " + r.score + " domande su " + r.total + ". Ne servono almeno " + r.needed + ".";
+    const b = document.createElement("button"); b.textContent = "Riprova";
+    b.onclick = start;
+    out.append(msg, b);
+    return;
+  }
+  msg.className = "msg ok";
+  msg.textContent = "Ben fatto: " + r.score + " risposte giuste su " + r.total + ". Ecco il tuo codice.";
+  const code = document.createElement("div"); code.className = "code"; code.textContent = r.code;
+  const qr = document.createElement("div"); qr.className = "qr";
+  const hint = document.createElement("p"); hint.className = "hint";
+  hint.textContent = "Mostra questo codice e non perderlo: vale una sola volta.";
+  out.append(msg, code, qr, hint);
+  const adminUrl = new URL("admin.html", location.href).href + "#" + r.code;
+  qr.innerHTML = qrSvg(adminUrl, 5, 2); // SVG generato qui nel browser, nessun servizio esterno
+}
+</script>
+</body></html>
