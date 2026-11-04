@@ -130,10 +130,12 @@ function showResult(r){
 
   const ticket = document.createElement("div"); ticket.className = "ticket";
   const top = document.createElement("div"); top.className = "ticket-top";
-  const brand = document.createElement("p"); brand.className = "ticket-brand"; brand.textContent = "Croce Rossa Italiana";
-  const ev = document.createElement("p"); ev.className = "ticket-event"; ev.textContent = quizTitle;
-  const sub = document.createElement("p"); sub.className = "ticket-sub"; sub.textContent = "codice valido una sola volta";
-  top.append(brand, ev, sub);
+  const logo = document.createElement("img"); logo.className = "ticket-logo"; logo.src = "bollo-bianco.png";
+  logo.alt = "Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria";
+  const ev = document.createElement("p"); ev.className = "ticket-event";
+  ev.append(quizTitle + " — ");
+  const em = document.createElement("em"); em.textContent = "superato"; ev.append(em);
+  top.append(logo, ev);
 
   const perf = document.createElement("div"); perf.className = "ticket-perf";
   const nl = document.createElement("span"); nl.className = "notch notch-l";
@@ -142,10 +144,9 @@ function showResult(r){
 
   const bottom = document.createElement("div"); bottom.className = "ticket-bottom";
   const qr = document.createElement("div"); qr.className = "ticket-qr";
-  const logo = document.createElement("img"); logo.className = "ticket-logo"; logo.src = "bollo.png";
-  logo.alt = "Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria";
   const code = document.createElement("div"); code.className = "ticket-code"; code.textContent = r.code;
-  bottom.append(qr, logo, code);
+  const note = document.createElement("p"); note.className = "ticket-note"; note.textContent = "codice valido una sola volta";
+  bottom.append(qr, code, note);
 
   ticket.append(top, perf, bottom);
   const hint = document.createElement("p"); hint.className = "hint";
