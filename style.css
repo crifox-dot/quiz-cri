@@ -2,13 +2,32 @@
   --bg:#16120f;--panel:#201a16;--line:#3b332b;
   --ink:#f4ede3;--mute:#b5a999;
   --red:#d3141f;--red-hi:#f0434b;--ok:#6fcf97;
+  --sel-bg:#2a1c1a;--ko-ink:#ffb3b7;--dirty-ink:#ffd28a;
 }
+/* modalita' chiara */
+html.light{
+  --bg:#f7f3ec;--panel:#ffffff;--line:#e2d8c9;
+  --ink:#1c140f;--mute:#6e6255;
+  --red:#d3141f;--red-hi:#b2101a;--ok:#1f7a45;
+  --sel-bg:#fbe4e2;--ko-ink:#8a1620;--dirty-ink:#8a5a06;
+}
+/* alto contrasto e testo piu' spazioso */
+html.a11y{--mute:var(--ink)}
+html.a11y:not(.light){--line:#6b5d4e}
+html.a11y.light{--line:#c3b6a3}
+html.a11y body{letter-spacing:.02em;font-size:19px}
 *{box-sizing:border-box}
 html{background:var(--bg)}
 body{margin:0;background:var(--bg);color:var(--ink);
   font:18px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;min-height:100vh}
-.top{padding:20px 20px 0;max-width:720px;margin:0 auto}
-.top img{display:block;height:44px;width:auto;max-width:100%}
+.top{padding:20px 20px 0;max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.top img{display:block;height:44px;width:auto;max-width:55%}
+.topbtns{display:flex;gap:10px;flex:none}
+.topbtn{width:44px;height:44px;flex:none;padding:0;border-radius:12px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);display:flex;align-items:center;justify-content:center}
+.topbtn svg{width:22px;height:22px;display:block}
+button.topbtn:hover:not(:disabled){background:var(--panel);border-color:var(--mute)}
+.topbtn[aria-pressed="true"]{border-color:var(--red-hi);color:var(--red-hi)}
 main{max-width:720px;margin:0 auto;padding:36px 20px 72px}
 h1{font:800 clamp(2.3rem,8vw,3.8rem)/1.02 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;letter-spacing:-.02em;margin:0 0 18px}
 h1 em{font:italic 400 1.12em/1 Georgia,"Times New Roman",serif;color:var(--red-hi);letter-spacing:0}
@@ -25,7 +44,7 @@ h1 em{font:italic 400 1.12em/1 Georgia,"Times New Roman",serif;color:var(--red-h
   transition:border-color .15s,background .15s}
 .opts label:hover{border-color:var(--mute)}
 .opts input{position:absolute;left:18px;top:50%;width:20px;height:20px;margin:-10px 0 0;accent-color:var(--red)}
-.opts label:has(input:checked){border-color:var(--red-hi);background:#2a1c1a}
+.opts label:has(input:checked){border-color:var(--red-hi);background:var(--sel-bg)}
 .opts label:has(input:focus-visible){outline:3px solid var(--ink);outline-offset:2px}
 
 .actions{display:flex;gap:12px;align-items:center;margin-top:28px}
@@ -40,7 +59,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-of
 /* risultato */
 .msg{margin:0 0 22px;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}
 .msg.ok{border-color:var(--ok);color:var(--ok)}
-.msg.ko{border-color:var(--red-hi);color:#ffb3b7}
+.msg.ko{border-color:var(--red-hi);color:var(--ko-ink)}
 .hint{color:var(--mute);font-size:.95rem;margin-top:16px;max-width:46ch}
 
 /* biglietto col codice */
@@ -85,12 +104,12 @@ textarea{display:block;width:100%;padding:12px 14px;font:inherit;color:var(--ink
 .optrow input[type=radio]{flex:none;width:22px;height:22px;accent-color:var(--red)}
 .optrow input[type=text]{flex:1;min-width:0;margin:0;padding:10px 12px;background:var(--bg)}
 button.small{padding:8px 14px;font-size:.9rem}
-button.danger{background:transparent;color:#ffb3b7;border:1px solid var(--red-hi)}
-button.danger:hover:not(:disabled){background:#2a1c1a}
+button.danger{background:transparent;color:var(--ko-ink);border:1px solid var(--red-hi)}
+button.danger:hover:not(:disabled){background:var(--sel-bg)}
 .savebar{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);
   padding:14px 0;margin-top:26px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .state{color:var(--mute);font-size:.95rem;margin-left:auto}
-.state.dirty{color:#ffd28a}
+.state.dirty{color:var(--dirty-ink)}
 
 /* senza stili scritti dentro le pagine (richiesto dalla Content-Security-Policy) */
 .plain{border:0;padding:0;margin:0}
