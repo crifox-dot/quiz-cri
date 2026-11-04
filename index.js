@@ -1,7 +1,7 @@
 const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev";
 const $ = (id) => document.getElementById(id);
 const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
-let questions = [], version = 0, needed = 0;
+let questions = [], version = 0, needed = 0, quizTitle = "Quiz sull'HIV";
 let order = [], answers = {}, step = 0; // answers: { idDomanda: indiceRispostaScelta }
 
 // mescola l'ordine delle domande (Fisher-Yates con numeri casuali sicuri)
@@ -28,7 +28,8 @@ async function loadQuestions(){
   const d = await (await fetch(API + "/api/questions")).json();
   if (!d.questions) throw new Error("risposta non valida");
   questions = d.questions; version = d.version; needed = d.needed;
-  setTitle(d.title || "Quiz sull'HIV");
+  quizTitle = d.title || "Quiz sull'HIV";
+  setTitle(quizTitle);
   $("lead").textContent = plural(questions.length, "domanda", "domande") + ", una alla volta. Con almeno " +
     plural(needed, "risposta giusta", "risposte giuste") + " ricevi un codice personale, valido una sola volta.";
 }
@@ -75,12 +76,25 @@ $("go").onclick = start;
 $("back").onclick = () => { step--; render(); };
 $("next").onclick = () => { if (step < order.length - 1) { step++; render(); } else submit(); };
 
+// Un id a caso salvato nel browser (non un cookie): serve solo a far ottenere di nuovo lo stesso
+// codice se la stessa persona rifa' il quiz dallo stesso telefono. Se il browser blocca la memoria
+// locale, va bene lo stesso: si ottiene solo un codice nuovo ad ogni volta, come oggi.
+function visitorId(){
+  try {
+    let v = localStorage.getItem("quizVisitor");
+    if (v && /^[a-f0-9]{32}$/.test(v)) return v;
+    v = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+    localStorage.setItem("quizVisitor", v);
+    return v;
+  } catch { return null; }
+}
+
 async function submit(){
   $("next").disabled = true;
   try {
     const r = await (await fetch(API + "/api/submit", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ version, answers })
+      body: JSON.stringify({ version, answers, visitor: visitorId() })
     })).json();
     if (r.stale) { // le domande sono state aggiornate mentre rispondevi: si riparte con quelle nuove
       await loadQuestions(); start();
@@ -110,12 +124,33 @@ function showResult(r){
     return;
   }
   msg.className = "msg ok";
-  msg.textContent = "Ben fatto: " + r.score + " risposte giuste su " + r.total + ". Ecco il tuo codice.";
-  const code = document.createElement("div"); code.className = "code"; code.textContent = r.code;
-  const qr = document.createElement("div"); qr.className = "qr";
+  msg.textContent = r.reused
+    ? "Hai già completato questo quiz da questo telefono: ecco di nuovo il tuo biglietto."
+    : "Ben fatto: " + r.score + " risposte giuste su " + r.total + ". Ecco il tuo biglietto.";
+
+  const ticket = document.createElement("div"); ticket.className = "ticket";
+  const top = document.createElement("div"); top.className = "ticket-top";
+  const brand = document.createElement("p"); brand.className = "ticket-brand"; brand.textContent = "Croce Rossa Italiana";
+  const ev = document.createElement("p"); ev.className = "ticket-event"; ev.textContent = quizTitle;
+  const sub = document.createElement("p"); sub.className = "ticket-sub"; sub.textContent = "codice valido una sola volta";
+  top.append(brand, ev, sub);
+
+  const perf = document.createElement("div"); perf.className = "ticket-perf";
+  const nl = document.createElement("span"); nl.className = "notch notch-l";
+  const nr = document.createElement("span"); nr.className = "notch notch-r";
+  perf.append(nl, nr);
+
+  const bottom = document.createElement("div"); bottom.className = "ticket-bottom";
+  const qr = document.createElement("div"); qr.className = "ticket-qr";
+  const logo = document.createElement("img"); logo.className = "ticket-logo"; logo.src = "bollo.png";
+  logo.alt = "Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria";
+  const code = document.createElement("div"); code.className = "ticket-code"; code.textContent = r.code;
+  bottom.append(qr, logo, code);
+
+  ticket.append(top, perf, bottom);
   const hint = document.createElement("p"); hint.className = "hint";
-  hint.textContent = "Mostra questo codice e non perderlo: vale una sola volta.";
-  out.append(msg, code, qr, hint);
+  hint.textContent = "Mostra questo biglietto e non perderlo: il codice vale una sola volta.";
+  out.append(msg, ticket, hint);
   const adminUrl = new URL("admin.html", location.href).href + "#" + r.code;
   qr.innerHTML = qrSvg(adminUrl, 5, 2); // SVG generato qui nel browser, nessun servizio esterno
 }

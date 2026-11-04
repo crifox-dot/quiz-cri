@@ -37,15 +37,31 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
 button.ghost:hover{border-color:var(--mute);background:transparent}
 button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
 
-/* risultato e codice */
+/* risultato */
 .msg{margin:0 0 22px;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}
 .msg.ok{border-color:var(--ok);color:var(--ok)}
 .msg.ko{border-color:var(--red-hi);color:#ffb3b7}
-.code{font:700 clamp(2rem,9vw,3rem)/1 ui-monospace,"SFMono-Regular",Menlo,monospace;letter-spacing:.1em;
-  border-left:5px solid var(--red);padding:8px 0 8px 18px;margin:8px 0 26px;word-break:break-all}
-.qr{display:inline-block;background:#fff;padding:14px;border-radius:14px}
-.qr svg{display:block;max-width:100%;height:auto}
-.hint{color:var(--mute);font-size:.95rem;margin-top:14px;max-width:46ch}
+.hint{color:var(--mute);font-size:.95rem;margin-top:16px;max-width:46ch}
+
+/* biglietto col codice */
+.ticket{max-width:360px;margin:0 auto;border-radius:24px;overflow:hidden;background:var(--panel);
+  box-shadow:0 24px 60px -24px rgba(0,0,0,.65);border:1px solid var(--line)}
+.ticket-top{background:linear-gradient(155deg,var(--red-hi),var(--red) 70%);color:#fff;
+  padding:26px 24px 30px;text-align:center}
+.ticket-brand{margin:0 0 14px;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+.ticket-event{margin:0;font-weight:800;font-size:clamp(1.3rem,6vw,1.7rem);line-height:1.2}
+.ticket-sub{margin:10px 0 0;font-size:.85rem;letter-spacing:.04em;text-transform:uppercase;opacity:.85}
+.ticket-perf{position:relative;height:0;border-top:2px dashed var(--line)}
+.ticket-perf .notch{position:absolute;top:50%;width:26px;height:26px;border-radius:50%;
+  background:var(--bg);transform:translateY(-50%)}
+.ticket-perf .notch-l{left:-13px}
+.ticket-perf .notch-r{right:-13px}
+.ticket-bottom{background:#fff;padding:30px 24px 26px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.ticket-qr{display:inline-block;padding:4px}
+.ticket-qr svg{display:block;width:min(220px,62vw);height:auto}
+.ticket-logo{display:block;height:64px;width:auto;margin:18px 0 14px}
+.ticket-code{font:700 clamp(1.5rem,7vw,2.1rem)/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.08em;color:#1b1310;word-break:break-all}
 
 /* admin */
 label.field{display:block;font-weight:600;margin-bottom:6px}
