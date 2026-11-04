@@ -132,9 +132,7 @@ function showResult(r){
   const top = document.createElement("div"); top.className = "ticket-top";
   const logo = document.createElement("img"); logo.className = "ticket-logo"; logo.src = "bollo-bianco.png";
   logo.alt = "Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria";
-  const ev = document.createElement("p"); ev.className = "ticket-event";
-  ev.append(quizTitle + " — ");
-  const em = document.createElement("em"); em.textContent = "superato"; ev.append(em);
+  const ev = document.createElement("p"); ev.className = "ticket-event"; ev.textContent = quizTitle;
   top.append(logo, ev);
 
   const perf = document.createElement("div"); perf.className = "ticket-perf";

@@ -12,9 +12,11 @@
 <main>
 <h1>Pannello <em>admin</em></h1>
 
-<!-- Stato del codice scansionato, visibile a chiunque (sola lettura: non lo consuma) -->
+<!-- Stato del codice scansionato, visibile a chiunque (sola lettura: non lo consuma). Non si rivela da solo: serve un tocco. -->
 <section id="status" hidden>
-  <div id="statusMsg" aria-live="polite"></div>
+  <p class="lead">Hai aperto un codice da un QR. Puoi controllare se è ancora valido, senza consumarlo.</p>
+  <button id="statusCheck">Verifica il codice</button>
+  <div id="statusMsg" aria-live="polite" class="mt18"></div>
 </section>
 
 <section id="login" hidden>
@@ -26,7 +28,7 @@
 </section>
 
 <section id="panel" hidden>
-  <p class="lead">Collegato. Scansionando il QR di un codice, questo viene convalidato subito e segnato come usato. Puoi anche scriverlo qui sotto.</p>
+  <p class="lead">Collegato. Scansionando un QR, il codice arriva già scritto qui sotto: premi Convalida per confermarlo e segnarlo come usato. Puoi anche scriverlo a mano.</p>
   <div id="res" aria-live="polite"></div>
   <label class="field" for="code">Codice da convalidare</label>
   <input id="code" type="text" autocomplete="off" placeholder="XXXX-XXXX">

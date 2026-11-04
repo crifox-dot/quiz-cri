@@ -39,17 +39,19 @@ async function denied(r) {
   return "Password errata. Tentativi rimasti: " + d.left + ".";
 }
 
-// Chi non e' collegato vede solo lo stato del codice, senza consumarlo
-async function publicStatus() {
-  $("status").hidden = false;
+// Chi non e' collegato puo' controllare lo stato del codice (senza consumarlo), ma solo
+// premendo il pulsante: arrivando da un QR non si vede nulla finche' non lo si chiede.
+$("statusCheck").onclick = async () => {
+  $("statusCheck").disabled = true;
   try { showCode($("statusMsg"), await (await api("/api/status", { code: pendingCode })).json(), false); }
   catch { show($("statusMsg"), "ko", "Server non raggiungibile."); }
-}
+  finally { $("statusCheck").disabled = false; }
+};
 
 function showLogin(msg) {
   $("panel").hidden = true; $("login").hidden = false;
   if (msg) show($("loginMsg"), "ko", msg);
-  if (pendingCode) publicStatus();
+  if (pendingCode) { $("status").hidden = false; $("statusMsg").innerHTML = ""; }
 }
 
 async function verify(code) {
@@ -62,8 +64,10 @@ async function verify(code) {
 
 function enterPanel() {
   $("login").hidden = true; $("status").hidden = true; $("panel").hidden = false;
-  if (pendingCode) { // scansione del QR da un telefono collegato: convalida subito
-    const c = pendingCode; $("code").value = c; clearHash(); verify(c);
+  if (pendingCode) { // scansione del QR: il codice arriva scritto, ma va confermato a mano
+    const c = pendingCode; $("code").value = c; clearHash();
+    $("res").innerHTML = '<p class="hint"></p>';
+    $("res").firstChild.textContent = "Hai scansionato il codice " + c + ": premi Convalida per confermarlo.";
   }
 }
 
