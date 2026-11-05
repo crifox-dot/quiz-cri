@@ -98,6 +98,14 @@ async function handleHuntResult(r) {
   if (!r.enabled) return; // caccia al tesoro non attiva: pagina normale, nessun cambiamento
   if (!r.valid) return showHuntNote("Questo QR non è più valido.");
 
+  if (r.retry) {
+    // domande sparse tra le tappe: alcune risposte di questa tappa erano sbagliate. Si rifanno SOLO
+    // quelle (tornare a cercare di nuovo tutti i QR per un errore sarebbe troppo faticoso).
+    const n = r.questions.length;
+    return startHuntStop(r.questions, "Hai risposto in modo sbagliato a " + plural(n, "domanda", "domande") +
+      " di questa tappa: rispondi di nuovo solo a " + (n === 1 ? "questa." : "queste."));
+  }
+
   if (!r.distribute) { // caccia al tesoro "classica": un unico quiz, le tappe si trovano in qualsiasi ordine
     if (!r.passed) return showHuntNote("Tappa trovata (" + r.found + " di " + r.total + "). Fai il quiz per continuare la caccia al tesoro.");
     return renderHuntTicket(1 + r.found, r.total + 1, r.code, r.reused, false);
@@ -123,6 +131,7 @@ function start(){
   answers = {};
   step = 0;
   $("start").hidden = true; $("result").hidden = true; $("quiz").hidden = false;
+  $("quizNote").hidden = true;
   render();
 }
 
@@ -137,14 +146,17 @@ function showHuntStopIntro(qs){
 }
 
 // Mostra solo le domande DI UNA TAPPA (caccia al tesoro con le domande sparse), riusando la stessa
-// schermata "una domanda alla volta" del quiz intero.
-function startHuntStop(qs){
+// schermata "una domanda alla volta" del quiz intero. "note", se presente, resta visibile sotto la
+// barra di avanzamento per tutto il giro di domande (usata per il messaggio "rifai solo queste").
+function startHuntStop(qs, note){
   huntMode = true;
   huntQs = qs;
   order = shuffle(qs.length);
   answers = {};
   step = 0;
   $("start").hidden = true; $("result").hidden = true; $("quiz").hidden = false;
+  const qn = $("quizNote");
+  if (note) { qn.textContent = note; qn.hidden = false; } else { qn.hidden = true; qn.textContent = ""; }
   render();
 }
 
