@@ -1,7 +1,7 @@
 const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev";
 const $ = (id) => document.getElementById(id);
 const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
-let questions = [], version = 0, needed = 0, quizTitle = "Quiz sull'HIV";
+let questions = [], version = 0, needed = 0, quizTitle = "Quiz sull'HIV", huntEnabled = false;
 let order = [], answers = {}, step = 0; // answers: { idDomanda: indiceRispostaScelta }
 
 // Caccia al tesoro: il QR di una tappa porta qui con "#tappa=TOKEN" nell'indirizzo.
@@ -35,9 +35,15 @@ async function loadQuestions(){
   if (!d.questions) throw new Error("risposta non valida");
   questions = d.questions; version = d.version; needed = d.needed;
   quizTitle = d.title || "Quiz sull'HIV";
+  huntEnabled = !!d.hunt;
   setTitle(quizTitle);
-  $("lead").textContent = plural(questions.length, "domanda", "domande") + ", una alla volta. Con almeno " +
-    plural(needed, "risposta giusta", "risposte giuste") + " ricevi un codice personale, valido una sola volta.";
+  // Con la caccia al tesoro attiva, il numero di domande conta meno di quante risposte servono:
+  // lo diciamo in modo piu' diretto, senza il "una alla volta" che qui non e' il punto.
+  $("lead").textContent = huntEnabled
+    ? "Con almeno " + plural(needed, "risposta giusta", "risposte giuste") + " su " + questions.length +
+      " ricevi un codice personale, valido una sola volta."
+    : plural(questions.length, "domanda", "domande") + ", una alla volta. Con almeno " +
+      plural(needed, "risposta giusta", "risposte giuste") + " ricevi un codice personale, valido una sola volta.";
 }
 
 loadQuestions().then(async () => {
@@ -185,10 +191,15 @@ function setReveal(ticket, fraction){
 // non rivela finche' la caccia al tesoro non e' completa): non c'e' nulla da leggere dietro la sfocatura.
 // "docked"=true lo tiene agganciato in basso allo schermo (per l'animazione di "stampa" della caccia
 // al tesoro); altrimenti resta semplicemente nella pagina, come il biglietto normale di sempre.
-async function buildTicket(locked, docked, code, msgText, note){
+async function buildTicket(locked, docked, code, msgText, note, belowMsg){
   $("start").hidden = true; $("quiz").hidden = true;
   const out = $("result"); out.hidden = false; out.innerHTML = "";
   const msg = document.createElement("p"); msg.className = "msg ok"; msg.textContent = msgText;
+  out.append(msg);
+  if (belowMsg) { // es. durante la caccia al tesoro: "vai a cercare gli altri QR", subito sotto il riquadro
+    const p = document.createElement("p"); p.className = "hint"; p.textContent = belowMsg;
+    out.append(p);
+  }
 
   const ticket = document.createElement("div");
   ticket.className = "ticket" + (locked ? " locked" : "") + (docked ? " docked" : "");
@@ -212,7 +223,7 @@ async function buildTicket(locked, docked, code, msgText, note){
   bottom.append(qr, codeEl, noteEl);
 
   ticket.append(top, perf, bottom);
-  out.append(msg, ticket);
+  out.append(ticket);
   if (!docked) { // il biglietto normale (fuori dalla caccia al tesoro) resta come sempre, con la sua nota
     const hint = document.createElement("p"); hint.className = "hint";
     hint.textContent = "Mostra questo biglietto e non perderlo: il codice vale una sola volta.";
@@ -243,7 +254,8 @@ async function renderHuntTicket(completed, total, code, reused){
         ? "Hai già completato questo quiz da questo telefono: ecco di nuovo il tuo biglietto."
         : "Complimenti, hai trovato tutte le tappe: ecco il tuo biglietto.");
   const note = locked ? "trova tutte le tappe per sbloccarlo" : "codice valido una sola volta";
-  const ticket = await buildTicket(locked, true, locked ? "••••-••••" : code, msgText, note);
+  const belowMsg = locked ? "Scansiona con la fotocamera gli altri QR sparsi in giro: tranquillo, non ci sono altre domande :)" : null;
+  const ticket = await buildTicket(locked, true, locked ? "••••-••••" : code, msgText, note, belowMsg);
   // Parte da un pelo piu' in basso e sale fino al punto giusto: si vede il biglietto "salire" un po'
   // ad ogni tappa, anche quando la pagina si e' appena caricata.
   setReveal(ticket, Math.max(0, fraction - 1 / total));
