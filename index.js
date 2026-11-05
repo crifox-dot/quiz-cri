@@ -260,7 +260,8 @@ async function qrImg(text, alt){
   const img = document.createElement("img");
   img.src = await qrPng(text, 8, 2);
   img.alt = alt;
-  return img;
+  img.draggable = false; // altrimenti il trascinamento nativo dell'immagine (drag HTML) interrompe
+  return img;             // il gesto di "staccare" il biglietto, scambiandolo per un drag-and-drop
 }
 
 // Sposta il biglietto in verticale: a fraction=0 e' spinto fuori dallo schermo, sotto al bordo
@@ -268,7 +269,8 @@ async function qrImg(text, alt){
 // al suo posto, del tutto visibile. Aumentando "fraction" il biglietto sale.
 function setReveal(ticket, fraction){
   const hiddenPercent = Math.max(0, Math.min(1, 1 - fraction)) * 100;
-  ticket.style.transform = "translateY(" + hiddenPercent + "%)";
+  ticket.dataset.hiddenPct = hiddenPercent;
+  if (!ticket.classList.contains("dragging")) ticket.style.transform = "translateY(" + hiddenPercent + "%)";
 }
 
 // Disegna il biglietto. "locked"=true mostra QR e codice sfocati, non quelli veri (che il server
@@ -290,6 +292,7 @@ async function buildTicket(locked, docked, code, msgText, note, belowMsg){
   const top = document.createElement("div"); top.className = "ticket-top";
   const logo = document.createElement("img"); logo.className = "ticket-logo"; logo.src = "bollo-bianco.png";
   logo.alt = "Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria";
+  logo.draggable = false; // idem: niente drag nativo dell'immagine sul biglietto
   const ev = document.createElement("p"); ev.className = "ticket-event"; ev.textContent = quizTitle;
   top.append(logo, ev);
 
@@ -312,8 +315,89 @@ async function buildTicket(locked, docked, code, msgText, note, belowMsg){
     const hint = document.createElement("p"); hint.className = "hint";
     hint.textContent = "Mostra questo biglietto e non perderlo: il codice vale una sola volta.";
     out.append(hint);
+  } else {
+    enableTicketDrag(ticket, locked);
   }
   return ticket;
+}
+
+// Fa "staccare" un pelo il biglietto agganciato in basso quando ci si preme sopra col dito e si
+// muove, come se fosse davvero appoggiato li' sotto: lo fa seguire il dito (ombra compresa) per un
+// piccolo tratto, da' una vibrazione leggera (come i tasti della tastiera di iPhone) non appena parte
+// il movimento, e quando si rilascia torna al suo posto. Si tiene premuto un attimo (HOLD_MS) prima
+// che il trascinamento si armi, cosi' un tocco distratto sul biglietto non lo fa muovere per sbaglio.
+// Da sbloccato (il QR vero e' stato rivelato) si puo' muovere un pelo in QUALSIASI direzione; da
+// bloccato (il biglietto si vede ancora a malapena, sotto il bordo) si puo' tirare SOLO verso il
+// centro dello schermo, cioe' un po' piu' in alto, per non rompere l'illusione che sia incollato li'.
+function enableTicketDrag(ticket, locked){
+  const HOLD_MS = 160;   // quanto tenere premuto prima che si armi (evita tocchi per sbaglio)
+  const CANCEL_PX = 6;   // se si muove piu' di cosi' PRIMA di armarsi, non e' una pressione volontaria
+  const MAX_FREE = 16;   // da sbloccato: massimo spostamento in ogni direzione (px)
+  const MAX_PULL = 22;   // da bloccato: massimo quanto si puo' tirare verso il centro (px)
+  let holdTimer = null, armed = false, startX = 0, startY = 0;
+
+  const baseTransform = () => "translateY(" + (ticket.dataset.hiddenPct || 0) + "%)";
+  const vibrate = () => { try { navigator.vibrate && navigator.vibrate(8); } catch {} };
+
+  function applyDrag(dx, dy){
+    ticket.style.transform = baseTransform() + " translate(" + dx + "px," + dy + "px) scale(1.018)";
+    const shadowY = 10 + Math.abs(dy) * 0.3 + Math.abs(dx) * 0.2;
+    ticket.style.boxShadow = (dx * 0.25) + "px " + shadowY + "px " + (22 + shadowY) + "px rgba(0,0,0,.4)";
+  }
+
+  // Ascolto spostamento e rilascio su "window" (non sul biglietto): se il dito si sposta velocemente
+  // puo' finire fuori dal riquadro del biglietto, e cosi' non si perdono gli eventi successivi.
+  function onMove(e){
+    const dx0 = e.clientX - startX, dy0 = e.clientY - startY;
+    if (!armed) {
+      if (Math.hypot(dx0, dy0) > CANCEL_PX) { clearTimeout(holdTimer); ticket.style.transition = ""; cleanup(); }
+      return;
+    }
+    let dx = dx0, dy = dy0;
+    if (locked) {
+      dx = 0; dy = Math.max(-MAX_PULL, Math.min(0, dy)); // solo verso il centro (in alto), mai in giu'
+    } else {
+      const dist = Math.hypot(dx, dy);
+      if (dist > MAX_FREE) { const k = MAX_FREE / dist; dx *= k; dy *= k; }
+    }
+    applyDrag(dx, dy);
+  }
+
+  function onUp(){
+    clearTimeout(holdTimer);
+    if (armed) {
+      ticket.style.transition = "transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s ease";
+      ticket.style.transform = baseTransform();
+      ticket.style.boxShadow = "";
+      ticket.classList.remove("dragging");
+      setTimeout(() => { ticket.style.transition = ""; }, 380);
+    } else {
+      ticket.style.transition = "";
+    }
+    armed = false;
+    cleanup();
+  }
+
+  function cleanup(){
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("pointercancel", onUp);
+  }
+
+  ticket.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    startX = e.clientX; startY = e.clientY;
+    ticket.style.transition = "none";
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => {
+      armed = true;
+      ticket.classList.add("dragging");
+      vibrate();
+    }, HOLD_MS);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  });
 }
 
 // Biglietto definitivo, col vero codice e il vero QR: usato quando la caccia al tesoro e' disattivata

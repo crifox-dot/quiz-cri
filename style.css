@@ -72,7 +72,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-of
 /* biglietto della caccia al tesoro: resta fermo in basso sullo schermo e "sale" da sotto il bordo,
    come se uscisse da una fessura, ad ogni tappa trovata */
 .ticket.docked{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));
-  margin:0 auto;z-index:40;transition:transform .6s ease}
+  margin:0 auto;z-index:40;transition:transform .6s ease;touch-action:none;user-select:none;cursor:grab}
+.ticket.docked.dragging{cursor:grabbing}
+.ticket.docked img{-webkit-user-drag:none}
 .ticket-top{background:linear-gradient(165deg,var(--red-hi),var(--red) 75%);color:#fff;
   padding:20px 24px 18px;text-align:center}
 .ticket-logo{display:block;height:132px;width:auto;margin:0 auto 14px}
