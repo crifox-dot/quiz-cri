@@ -3,6 +3,7 @@ const $ = (id) => document.getElementById(id);
 const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
 let questions = [], version = 0, needed = 0, quizTitle = "Quiz sull'HIV";
 let huntDistributeFlag = false; // caccia al tesoro con le domande sparse tra le tappe: si sa gia' al caricamento
+let huntEnabledFlag = false; // caccia al tesoro attiva (classica o con domande sparse, non importa quale)
 let order = [], answers = {}, step = 0; // answers: { idDomanda: indiceRispostaScelta }
 
 // Caccia al tesoro con le domande sparse tra le tappe: mentre si risponde alle domande DI UNA TAPPA
@@ -42,9 +43,23 @@ async function loadQuestions(){
   questions = d.questions; version = d.version; needed = d.needed;
   quizTitle = d.title || "Quiz sull'HIV";
   huntDistributeFlag = !!d.huntDistribute;
+  huntEnabledFlag = !!d.hunt;
   setTitle(quizTitle);
   $("lead").textContent = "Con almeno " + plural(needed, "risposta giusta", "risposte giuste") +
     " su " + questions.length + " ricevi un codice personale, valido una sola volta.";
+}
+
+// Controlla se questo browser ha gia' un codice da prima (es. pagina ricaricata dopo averlo
+// ottenuto, anche a distanza di giorni entro la scadenza del codice): in tal caso non ha senso far
+// rifare il quiz o la caccia al tesoro da capo a chi l'ha gia' completata.
+async function checkExistingCode(){
+  const vid = visitorId();
+  if (!vid) return null;
+  const r = await (await fetch(API + "/api/mycode", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ visitor: vid }),
+  })).json();
+  return r.code || null;
 }
 
 loadQuestions().then(async () => {
@@ -53,7 +68,16 @@ loadQuestions().then(async () => {
   if (huntToken) {
     const t = huntToken; clearHash();
     try { await handleHuntVisit(t); } catch { showHuntNote("Server non raggiungibile: prova a scansionare di nuovo questo QR."); }
-  } else if (huntDistributeFlag) {
+    return;
+  }
+  let already = null;
+  try { already = await checkExistingCode(); } catch {} // offline/errore: si procede come se non ci fosse
+  if (already) {
+    return huntEnabledFlag
+      ? renderHuntTicket(1, 1, already, true, huntDistributeFlag)
+      : showTicket(already, true);
+  }
+  if (huntDistributeFlag) {
     // le domande sono sparse tra le tappe: niente quiz intero da qui, bisogna trovare e scansionare i QR
     $("go").hidden = true;
     showHuntNote("Il quiz è diviso tra diversi QR sparsi in giro: scansiona con la fotocamera uno dei QR per iniziare a rispondere.");
