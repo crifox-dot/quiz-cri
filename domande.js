@@ -154,9 +154,15 @@ async function loadHunt() {
 
 function huntUrl(t) { return new URL("index.html#tappa=" + t, location.href).href; }
 
+// "Dividi le domande tra le tappe" ha senso solo se la caccia al tesoro e' attiva: si puo' selezionare
+// solo quando "Attiva caccia al tesoro" e' spuntata (anche solo in anteprima, prima di premere Salva).
+function syncHuntDistributeEnabled() { $("huntDistribute").disabled = !$("huntEnabled").checked; }
+$("huntEnabled").onchange = syncHuntDistributeEnabled;
+
 async function renderHunt() {
   $("huntEnabled").checked = !!hunt.enabled;
   $("huntDistribute").checked = !!hunt.distribute;
+  syncHuntDistributeEnabled();
   $("huntState").textContent = hunt.enabled ? "Attiva" : "Non attiva";
   const grid = $("huntGrid"); grid.innerHTML = "";
   const tokens = hunt.tokens || [];
