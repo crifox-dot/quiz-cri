@@ -131,7 +131,7 @@ function start(){
   answers = {};
   step = 0;
   $("start").hidden = true; $("result").hidden = true; $("quiz").hidden = false;
-  $("quizNote").hidden = true;
+  $("quizNote").hidden = true; $("quizNote").innerHTML = "";
   render();
 }
 
@@ -156,7 +156,10 @@ function startHuntStop(qs, note){
   step = 0;
   $("start").hidden = true; $("result").hidden = true; $("quiz").hidden = false;
   const qn = $("quizNote");
-  if (note) { qn.textContent = note; qn.hidden = false; } else { qn.hidden = true; qn.textContent = ""; }
+  // Stesso riquadro rosso usato per dire che un codice/QR non e' valido (vedi showError e admin.js),
+  // cosi' l'avviso "hai risposto male" si nota allo stesso modo di un errore.
+  if (note) { qn.innerHTML = '<p class="msg ko"></p>'; qn.firstChild.textContent = note; qn.hidden = false; }
+  else { qn.hidden = true; qn.innerHTML = ""; }
   render();
 }
 

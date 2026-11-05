@@ -3,6 +3,7 @@
   --ink:#f4ede3;--mute:#b5a999;
   --red:#d3141f;--red-hi:#f0434b;--ok:#6fcf97;
   --sel-bg:#2a1c1a;--ko-ink:#ffb3b7;--dirty-ink:#ffd28a;
+  --brand-red:var(--red-hi);
 }
 /* modalita' chiara */
 html.light{
@@ -10,6 +11,9 @@ html.light{
   --ink:#1c140f;--mute:#6e6255;
   --red:#d3141f;--red-hi:#b2101a;--ok:#1f7a45;
   --sel-bg:#fbe4e2;--ko-ink:#8a1620;--dirty-ink:#8a5a06;
+  /* rosso del logo della Croce Rossa (preso dai loghi usati nel sito), solo per l'ultima
+     parola del titolo in modalita' chiara: non toccare --red-hi, usato anche altrove */
+  --brand-red:#cc0000;
 }
 /* alto contrasto e testo piu' spazioso */
 html.a11y{--mute:var(--ink)}
@@ -30,7 +34,7 @@ button.topbtn:hover:not(:disabled){background:var(--panel);border-color:var(--mu
 .topbtn[aria-pressed="true"]{border-color:var(--red-hi);color:var(--red-hi)}
 main{max-width:720px;margin:0 auto;padding:36px 20px 72px}
 h1{font:800 clamp(2.3rem,8vw,3.8rem)/1.02 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;letter-spacing:-.02em;margin:0 0 18px}
-h1 em{font:italic 400 1.12em/1 Georgia,"Times New Roman",serif;color:var(--red-hi);letter-spacing:0}
+h1 em{font:italic 400 1.12em/1 Georgia,"Times New Roman",serif;color:var(--brand-red);letter-spacing:0}
 .lead{color:var(--mute);margin:0 0 32px;max-width:52ch}
 [hidden]{display:none!important}
 
