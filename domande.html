@@ -71,12 +71,18 @@
   <p class="lead">Facoltativa: se non la attivi il sito funziona esattamente come oggi. Genera dei QR da stampare e
     posizionare in giro: chi li trova (in qualsiasi ordine, non serve stamparli o scoprirli in sequenza) riceve il
     biglietto solo dopo aver fatto il quiz E trovato tutte le tappe. Cambiare le domande del quiz non richiede
-    rifare questi QR: sono indipendenti.</p>
+    rifare questi QR: sono indipendenti. Puoi anche dividere le domande tra le tappe, invece di farle vedere
+    tutte insieme dopo la prima tappa trovata.</p>
 
   <div class="passbox">
     <label class="field" for="huntEnabled"><input type="checkbox" id="huntEnabled"> Attiva caccia al tesoro</label>
     <button id="huntSave" class="ghost small">Salva</button>
     <span id="huntState" class="state"></span>
+  </div>
+
+  <div class="passbox">
+    <label class="field" for="huntDistribute"><input type="checkbox" id="huntDistribute"> Dividi le domande tra le tappe (ogni QR ne mostra solo alcune, invece di tutto il quiz)</label>
+    <p class="hint">Si salva insieme al pulsante "Salva" qui sopra. Cambiarla non richiede rigenerare i QR: la divisione si aggiorna da sola.</p>
   </div>
 
   <div class="passbox">

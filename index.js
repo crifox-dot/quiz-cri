@@ -4,6 +4,11 @@ const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
 let questions = [], version = 0, needed = 0, quizTitle = "Quiz sull'HIV";
 let order = [], answers = {}, step = 0; // answers: { idDomanda: indiceRispostaScelta }
 
+// Caccia al tesoro con le domande sparse tra le tappe: mentre si risponde alle domande DI UNA TAPPA
+// (invece che al quiz intero), "huntMode" e' vero e "huntQs"/"huntStopToken" sostituiscono
+// "questions"/l'invio a "/api/submit" - order/answers/step/render restano gli stessi.
+let huntMode = false, huntQs = [], huntStopToken = null;
+
 // Caccia al tesoro: il QR di una tappa porta qui con "#tappa=TOKEN" nell'indirizzo.
 // Se la caccia al tesoro non e' attiva, questo pezzo di codice non fa nulla: il sito resta come sempre.
 let huntToken = null;
@@ -57,17 +62,53 @@ function showHuntNote(text) {
 // Scansione di una tappa della caccia al tesoro (arrivata con "#tappa=" nell'indirizzo).
 // Se la caccia al tesoro non e' attiva sul server, questa funzione non cambia nulla: resta la pagina normale.
 async function handleHuntVisit(token) {
+  huntStopToken = token;
   const r = await (await fetch(API + "/api/hunt/visit", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token, visitor: visitorId() })
   })).json();
+  await handleHuntResult(r);
+}
+
+// Invio delle risposte DI UNA TAPPA (caccia al tesoro con le domande sparse): invece di "/api/submit"
+// (tutto il quiz in una volta) si manda solo la tappa appena risposta.
+async function submitHuntStop(){
+  try {
+    const r = await (await fetch(API + "/api/hunt/visit", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: huntStopToken, answers, visitor: visitorId() })
+    })).json();
+    if (r.error) throw new Error(r.error);
+    await handleHuntResult(r);
+  } catch {
+    showError("Invio non riuscito. Riprova.");
+    $("next").disabled = false;
+  }
+}
+
+// Legge la risposta di "/api/hunt/visit" (sia una scansione che l'invio delle risposte di una tappa)
+// e decide cosa mostrare: le domande di questa tappa, una nota di avanzamento, il biglietto a tappe
+// (se completato e superato) o l'esito negativo (se completato ma il punteggio non basta).
+async function handleHuntResult(r) {
   if (!r.enabled) return; // caccia al tesoro non attiva: pagina normale, nessun cambiamento
   if (!r.valid) return showHuntNote("Questo QR non è più valido.");
-  if (!r.passed) return showHuntNote("Tappa trovata (" + r.found + " di " + r.total + "). Fai il quiz per continuare la caccia al tesoro.");
-  renderHuntTicket(1 + r.found, r.total + 1, r.code, r.reused);
+
+  if (!r.distribute) { // caccia al tesoro "classica": un unico quiz, le tappe si trovano in qualsiasi ordine
+    if (!r.passed) return showHuntNote("Tappa trovata (" + r.found + " di " + r.total + "). Fai il quiz per continuare la caccia al tesoro.");
+    return renderHuntTicket(1 + r.found, r.total + 1, r.code, r.reused, false);
+  }
+
+  // caccia al tesoro con le domande sparse tra le tappe
+  if (r.questions && r.questions.length) return startHuntStop(r.questions);
+  if ("passed" in r && r.found >= r.total) {
+    if (r.passed) return renderHuntTicket(r.found, r.total, r.code, r.reused, true);
+    return showHuntFail(r.score, r.needed, r.quizTotal);
+  }
+  renderHuntTicket(r.found, r.total, null, false, true);
 }
 
 function start(){
+  huntMode = false;
   order = shuffle(questions.length);
   answers = {};
   step = 0;
@@ -75,8 +116,21 @@ function start(){
   render();
 }
 
+// Mostra solo le domande DI UNA TAPPA (caccia al tesoro con le domande sparse), riusando la stessa
+// schermata "una domanda alla volta" del quiz intero.
+function startHuntStop(qs){
+  huntMode = true;
+  huntQs = qs;
+  order = shuffle(qs.length);
+  answers = {};
+  step = 0;
+  $("start").hidden = true; $("result").hidden = true; $("quiz").hidden = false;
+  render();
+}
+
 function render(){
-  const x = questions[order[step]];
+  const qs = huntMode ? huntQs : questions;
+  const x = qs[order[step]];
   $("count").textContent = "Domanda " + (step + 1) + " di " + order.length;
   $("bar").style.width = (step / order.length * 100) + "%";
   $("qtext").textContent = x.q;
@@ -119,6 +173,7 @@ function visitorId(){
 
 async function submit(){
   $("next").disabled = true;
+  if (huntMode) return submitHuntStop();
   try {
     const r = await (await fetch(API + "/api/submit", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -152,10 +207,10 @@ async function showResult(r){
     return;
   }
   if (r.hunt && !r.code) { // caccia al tesoro attiva: quiz superato, ma mancano ancora delle tappe
-    return renderHuntTicket(1 + r.huntFound, r.huntTotal + 1, null, false);
+    return renderHuntTicket(1 + r.huntFound, r.huntTotal + 1, null, false, r.huntDistribute);
   }
   if (r.hunt) { // caccia al tesoro attiva, ma le tappe erano gia' tutte trovate: biglietto gia' completo
-    return renderHuntTicket(r.huntTotal + 1, r.huntTotal + 1, r.code, r.reused);
+    return renderHuntTicket(r.huntTotal + 1, r.huntTotal + 1, r.code, r.reused, r.huntDistribute);
   }
   const text = r.reused
     ? "Hai già completato questo quiz da questo telefono: ecco di nuovo il tuo biglietto."
@@ -238,22 +293,41 @@ async function showTicket(code, reused, msgText){
 // di piu' ad ogni tappa trovata, come se stesse uscendo da una fessura sotto al bordo dello schermo.
 // Resta sfocato (QR e codice finti) finche' "code" non arriva dal server, cioe' finche' non sono
 // state trovate tutte le tappe: prima di allora non c'e' nessun codice vero da proteggere o rivelare.
-async function renderHuntTicket(completed, total, code, reused){
-  const fraction = total > 0 ? Math.min(1, completed / total) : 1;
+// "found"/"total" sono le tappe; con la caccia "classica" (distribute=false) il quiz intero conta
+// come un passo in piu' (per questo chi la chiama gli passa gia' "+1"), mentre con le domande sparse
+// tra le tappe ogni tappa risposta e' gia' un passo pieno, senza bisogno di questo scalino iniziale.
+async function renderHuntTicket(found, total, code, reused, distribute){
+  const fraction = total > 0 ? Math.min(1, found / total) : 1;
   const locked = !code;
-  const huntFound = completed - 1, huntTotal = total - 1;
+  const huntFound = distribute ? found : found - 1, huntTotal = distribute ? total : total - 1;
   const msgText = locked
     ? "Hai superato il quiz. Tappe trovate: " + huntFound + " di " + huntTotal + "."
     : (reused
         ? "Hai già completato questo quiz da questo telefono: ecco di nuovo il tuo biglietto."
         : "Complimenti, hai trovato tutte le tappe: ecco il tuo biglietto.");
   const note = locked ? "trova tutte le tappe per sbloccarlo" : "codice valido una sola volta";
-  const belowMsg = locked ? "Scansiona con la fotocamera gli altri QR sparsi in giro: tranquillo, non ci sono altre domande :)" : null;
+  const belowMsg = locked
+    ? (distribute
+        ? "Scansiona con la fotocamera gli altri QR sparsi in giro per poter completare il quiz :)"
+        : "Scansiona con la fotocamera gli altri QR sparsi in giro: tranquillo, non ci sono altre domande :)")
+    : null;
   const ticket = await buildTicket(locked, true, locked ? "••••-••••" : code, msgText, note, belowMsg);
   // Parte da un pelo piu' in basso e sale fino al punto giusto: si vede il biglietto "salire" un po'
   // ad ogni tappa, anche quando la pagina si e' appena caricata.
   setReveal(ticket, Math.max(0, fraction - 1 / total));
   requestAnimationFrame(() => requestAnimationFrame(() => setReveal(ticket, fraction)));
+}
+
+// Caccia al tesoro con le domande sparse: tutte le tappe sono state trovate e risposte, ma il
+// punteggio complessivo non basta. Si puo' tornare a scansionare una tappa per cambiare le risposte.
+function showHuntFail(score, needed, total){
+  $("start").hidden = true; $("quiz").hidden = true;
+  const out = $("result"); out.hidden = false; out.innerHTML = "";
+  const msg = document.createElement("p"); msg.className = "msg ko";
+  msg.textContent = "Hai risposto correttamente a " + score + " domande su " + total + ". Ne servono almeno " + needed + ".";
+  const hint = document.createElement("p"); hint.className = "hint";
+  hint.textContent = "Torna a scansionare con la fotocamera una delle tappe per cambiare le risposte e riprovare.";
+  out.append(msg, hint);
 }
 
 // Se la pagina resta aperta e si scansiona un'altra tappa (stessa scheda), l'indirizzo cambia da solo:

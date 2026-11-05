@@ -156,6 +156,7 @@ function huntUrl(t) { return new URL("index.html#tappa=" + t, location.href).hre
 
 async function renderHunt() {
   $("huntEnabled").checked = !!hunt.enabled;
+  $("huntDistribute").checked = !!hunt.distribute;
   $("huntState").textContent = hunt.enabled ? "Attiva" : "Non attiva";
   const grid = $("huntGrid"); grid.innerHTML = "";
   const tokens = hunt.tokens || [];
@@ -163,21 +164,23 @@ async function renderHunt() {
   // Immagini PNG vere (non SVG incorporati): solo cosi' si possono salvare come foto da telefono o PC.
   const pngs = await Promise.all(tokens.map((t) => qrPng(huntUrl(t), 8, 1)));
   tokens.forEach((t, i) => {
-    const item = el("div", { className: "hunt-item" },
-      el("img", { src: pngs[i], alt: "QR della tappa " + (i + 1) }),
-      el("p", { textContent: "Tappa " + (i + 1) }),
-      el("span", { textContent: t }));
-    grid.append(item);
+    const kids = [el("img", { src: pngs[i], alt: "QR della tappa " + (i + 1) }), el("p", { textContent: "Tappa " + (i + 1) })];
+    if (hunt.distribute && Array.isArray(hunt.counts)) {
+      const n = hunt.counts[i];
+      kids.push(el("p", { className: "qcount", textContent: n === 1 ? "1 domanda" : n + " domande" }));
+    }
+    kids.push(el("span", { textContent: t }));
+    grid.append(el("div", { className: "hunt-item" }, ...kids));
   });
 }
 
 $("huntSave").onclick = async () => {
   try {
-    const r = await api("/api/editor/hunt/save", { enabled: $("huntEnabled").checked });
+    const r = await api("/api/editor/hunt/save", { enabled: $("huntEnabled").checked, distribute: $("huntDistribute").checked });
     if (r.status === 401) { forget(); showLogin("Sessione scaduta: accedi di nuovo."); return; }
     const d = await r.json();
     if (!r.ok) { show($("huntMsg"), "ko", d.error || "Salvataggio non riuscito."); return; }
-    hunt = d; await renderHunt();
+    await loadHunt(); // ricarico dal server: solo cosi' arriva anche "counts" se la divisione e' attiva
     show($("huntMsg"), "ok", hunt.enabled ? "Caccia al tesoro attiva." : "Caccia al tesoro non attiva.");
   } catch { show($("huntMsg"), "ko", "Server non raggiungibile."); }
 };
@@ -185,17 +188,21 @@ $("huntSave").onclick = async () => {
 $("huntGenerate").onclick = async () => {
   const count = Number($("huntCount").value);
   if (!Number.isInteger(count) || count < 1 || count > 20) return show($("huntMsg"), "ko", "Scegli da 1 a 20 tappe.");
-  const warn = hunt && hunt.tokens && hunt.tokens.length
+  const distribute = $("huntDistribute").checked;
+  let warn = hunt && hunt.tokens && hunt.tokens.length
     ? "Generare " + count + " nuovi QR delle tappe?\nI " + hunt.tokens.length + " QR già stampati smetteranno di funzionare e chi stava già cercando le tappe dovrà ripartire con quelli nuovi."
     : "Generare " + count + " nuovi QR delle tappe?";
+  if (distribute && quiz && count > quiz.questions.length) {
+    warn = "Attenzione: ci sono più tappe (" + count + ") che domande (" + quiz.questions.length + "): alcune tappe non avranno nessuna domanda.\n\n" + warn;
+  }
   if (!confirm(warn)) return;
   $("huntGenerate").disabled = true;
   try {
-    const r = await api("/api/editor/hunt/generate", { count });
+    const r = await api("/api/editor/hunt/generate", { count, distribute });
     if (r.status === 401) { forget(); showLogin("Sessione scaduta: accedi di nuovo."); return; }
     const d = await r.json();
     if (!r.ok) { show($("huntMsg"), "ko", d.error || "Generazione non riuscita."); return; }
-    hunt = d; await renderHunt();
+    await loadHunt(); // ricarico dal server: solo cosi' arriva anche "counts" se la divisione e' attiva
     show($("huntMsg"), "ok", "Generati " + hunt.tokens.length + " nuovi QR. Salvali come foto e posizionali in giro, in qualsiasi ordine.");
   } catch { show($("huntMsg"), "ko", "Server non raggiungibile."); }
   finally { $("huntGenerate").disabled = false; }

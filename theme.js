@@ -5,7 +5,16 @@
   const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
   const set = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 
-  if (get("theme") === "light") root.classList.add("light");
+  // Finche' la persona non tocca il pulsante "modalita' chiara", il sito segue il tema chiaro/scuro
+  // del dispositivo (anche se cambia da solo, es. al tramonto). Dopo averlo toccato, la sua scelta
+  // esplicita (salvata qui sotto) vince sempre, anche se poi il dispositivo cambia tema.
+  const mql = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)");
+  const systemLight = () => !!(mql && mql.matches);
+  function applyTheme(){
+    const explicit = get("theme"); // "light" o "dark" solo se gia' toccato il pulsante
+    root.classList.toggle("light", explicit ? explicit === "light" : systemLight());
+  }
+  applyTheme();
   if (get("a11y") === "1") root.classList.add("a11y");
 
   function swapLogos(){
@@ -13,6 +22,16 @@
     document.querySelectorAll("img[data-logo-dark]").forEach((img) => {
       const next = light ? img.dataset.logoLight : img.dataset.logoDark;
       if (next && img.getAttribute("src") !== next) img.src = next;
+    });
+  }
+
+  if (mql && mql.addEventListener) {
+    mql.addEventListener("change", () => {
+      if (!get("theme")) { // nessuna scelta esplicita: continua a seguire il dispositivo
+        applyTheme(); swapLogos();
+        const lightBtn = document.getElementById("btnLight");
+        if (lightBtn) lightBtn.setAttribute("aria-pressed", String(root.classList.contains("light")));
+      }
     });
   }
 
@@ -34,7 +53,7 @@
       lightBtn.onclick = () => {
         const on = !root.classList.contains("light");
         root.classList.toggle("light", on);
-        set("theme", on ? "light" : "dark");
+        set("theme", on ? "light" : "dark"); // scelta esplicita: da qui in poi non segue piu' il dispositivo
         lightBtn.setAttribute("aria-pressed", String(on));
         swapLogos();
       };
