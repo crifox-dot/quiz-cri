@@ -1,7 +1,7 @@
 const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev";
 const $ = (id) => document.getElementById(id);
 const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
-let questions = [], version = 0, needed = 0, quizTitle = "Quiz sull'HIV", huntEnabled = false;
+let questions = [], version = 0, needed = 0, quizTitle = "Quiz sull'HIV";
 let order = [], answers = {}, step = 0; // answers: { idDomanda: indiceRispostaScelta }
 
 // Caccia al tesoro: il QR di una tappa porta qui con "#tappa=TOKEN" nell'indirizzo.
@@ -35,15 +35,9 @@ async function loadQuestions(){
   if (!d.questions) throw new Error("risposta non valida");
   questions = d.questions; version = d.version; needed = d.needed;
   quizTitle = d.title || "Quiz sull'HIV";
-  huntEnabled = !!d.hunt;
   setTitle(quizTitle);
-  // Con la caccia al tesoro attiva, il numero di domande conta meno di quante risposte servono:
-  // lo diciamo in modo piu' diretto, senza il "una alla volta" che qui non e' il punto.
-  $("lead").textContent = huntEnabled
-    ? "Con almeno " + plural(needed, "risposta giusta", "risposte giuste") + " su " + questions.length +
-      " ricevi un codice personale, valido una sola volta."
-    : plural(questions.length, "domanda", "domande") + ", una alla volta. Con almeno " +
-      plural(needed, "risposta giusta", "risposte giuste") + " ricevi un codice personale, valido una sola volta.";
+  $("lead").textContent = "Con almeno " + plural(needed, "risposta giusta", "risposte giuste") +
+    " su " + questions.length + " ricevi un codice personale, valido una sola volta.";
 }
 
 loadQuestions().then(async () => {
