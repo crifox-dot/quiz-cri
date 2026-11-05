@@ -2,6 +2,7 @@ const API = "https://steep-haze-2da0.cloudflare-vbmev.workers.dev";
 const $ = (id) => document.getElementById(id);
 const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
 let questions = [], version = 0, needed = 0, quizTitle = "Quiz sull'HIV";
+let huntDistributeFlag = false; // caccia al tesoro con le domande sparse tra le tappe: si sa gia' al caricamento
 let order = [], answers = {}, step = 0; // answers: { idDomanda: indiceRispostaScelta }
 
 // Caccia al tesoro con le domande sparse tra le tappe: mentre si risponde alle domande DI UNA TAPPA
@@ -40,23 +41,27 @@ async function loadQuestions(){
   if (!d.questions) throw new Error("risposta non valida");
   questions = d.questions; version = d.version; needed = d.needed;
   quizTitle = d.title || "Quiz sull'HIV";
+  huntDistributeFlag = !!d.huntDistribute;
   setTitle(quizTitle);
   $("lead").textContent = "Con almeno " + plural(needed, "risposta giusta", "risposte giuste") +
     " su " + questions.length + " ricevi un codice personale, valido una sola volta.";
 }
 
 loadQuestions().then(async () => {
-  $("go").disabled = false;
   $("loadMsg").hidden = true;
+  $("go").disabled = false;
   if (huntToken) {
     const t = huntToken; clearHash();
     try { await handleHuntVisit(t); } catch { showHuntNote("Server non raggiungibile: prova a scansionare di nuovo questo QR."); }
+  } else if (huntDistributeFlag) {
+    // le domande sono sparse tra le tappe: niente quiz intero da qui, bisogna trovare e scansionare i QR
+    $("go").hidden = true;
+    showHuntNote("Il quiz è diviso tra diversi QR sparsi in giro: scansiona con la fotocamera uno dei QR per iniziare a rispondere.");
   }
 }).catch(() => { setTitle("Quiz sull'HIV"); $("loadMsg").textContent = "Impossibile caricare il quiz. Riprova più tardi."; });
 
 function showHuntNote(text) {
-  const p = document.createElement("p"); p.className = "hint"; p.textContent = text;
-  $("start").append(p);
+  const p = $("huntNote"); p.textContent = text; p.hidden = false;
 }
 
 // Scansione di una tappa della caccia al tesoro (arrivata con "#tappa=" nell'indirizzo).
@@ -99,7 +104,12 @@ async function handleHuntResult(r) {
   }
 
   // caccia al tesoro con le domande sparse tra le tappe
-  if (r.questions && r.questions.length) return startHuntStop(r.questions);
+  if (r.questions && r.questions.length) {
+    // la primissima tappa (nessun'altra ancora risposta) mostra prima la schermata iniziale, per
+    // spiegare che il quiz e' diviso in piu' parti; dalla seconda tappa in poi si entra dritti nel quiz.
+    if (!r.found) return showHuntStopIntro(r.questions);
+    return startHuntStop(r.questions);
+  }
   if ("passed" in r && r.found >= r.total) {
     if (r.passed) return renderHuntTicket(r.found, r.total, r.code, r.reused, true);
     return showHuntFail(r.score, r.needed, r.quizTotal);
@@ -114,6 +124,16 @@ function start(){
   step = 0;
   $("start").hidden = true; $("result").hidden = true; $("quiz").hidden = false;
   render();
+}
+
+// Prima tappa scansionata (caccia al tesoro con le domande sparse, nessun'altra tappa ancora risposta):
+// mostra la schermata iniziale invece di entrare subito nel quiz, spiegando che e' diviso in piu' parti.
+// Dalla seconda tappa in poi (vedi handleHuntResult) si salta questa schermata ed entra dritti nel quiz.
+function showHuntStopIntro(qs){
+  $("quiz").hidden = true; $("result").hidden = true; $("start").hidden = false;
+  $("go").hidden = false; $("go").disabled = false;
+  $("go").onclick = () => startHuntStop(qs);
+  showHuntNote("Il quiz è diviso tra diversi QR sparsi in giro: questa è la prima parte.");
 }
 
 // Mostra solo le domande DI UNA TAPPA (caccia al tesoro con le domande sparse), riusando la stessa
@@ -296,12 +316,19 @@ async function showTicket(code, reused, msgText){
 // "found"/"total" sono le tappe; con la caccia "classica" (distribute=false) il quiz intero conta
 // come un passo in piu' (per questo chi la chiama gli passa gia' "+1"), mentre con le domande sparse
 // tra le tappe ogni tappa risposta e' gia' un passo pieno, senza bisogno di questo scalino iniziale.
+const ORDINALI = ["zero", "prima", "seconda", "terza", "quarta", "quinta", "sesta", "settima", "ottava",
+  "nona", "decima", "undicesima", "dodicesima", "tredicesima", "quattordicesima", "quindicesima",
+  "sedicesima", "diciassettesima", "diciottesima", "diciannovesima", "ventesima"];
+const ordinale = (n) => ORDINALI[n] || (n + "ª");
+
 async function renderHuntTicket(found, total, code, reused, distribute){
   const fraction = total > 0 ? Math.min(1, found / total) : 1;
   const locked = !code;
   const huntFound = distribute ? found : found - 1, huntTotal = distribute ? total : total - 1;
   const msgText = locked
-    ? "Hai superato il quiz. Tappe trovate: " + huntFound + " di " + huntTotal + "."
+    ? (distribute
+        ? "Hai superato la " + ordinale(huntFound) + " parte del quiz."
+        : "Hai superato il quiz. Tappe trovate: " + huntFound + " di " + huntTotal + ".")
     : (reused
         ? "Hai già completato questo quiz da questo telefono: ecco di nuovo il tuo biglietto."
         : "Complimenti, hai trovato tutte le tappe: ecco il tuo biglietto.");
