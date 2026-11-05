@@ -130,7 +130,7 @@ async function submit(){
       return;
     }
     if (r.error) { const e = new Error(r.error); e.wait = r.retryAfter; throw e; }
-    showResult(r);
+    await showResult(r);
   } catch (e) {
     showError(e.wait
       ? "Troppi invii ravvicinati. Riprova tra circa " + Math.ceil(e.wait / 60) + " minuti."
@@ -139,7 +139,7 @@ async function submit(){
   }
 }
 
-function showResult(r){
+async function showResult(r){
   $("quiz").hidden = true;
   const out = $("result"); out.hidden = false; out.innerHTML = "";
   const msg = document.createElement("p");
@@ -160,34 +160,38 @@ function showResult(r){
   const text = r.reused
     ? "Hai già completato questo quiz da questo telefono: ecco di nuovo il tuo biglietto."
     : "Ben fatto: " + r.score + " risposte giuste su " + r.total + ". Ecco il tuo biglietto.";
-  showTicket(r.code, r.reused, text);
+  await showTicket(r.code, r.reused, text);
 }
 
-// Un QR come <img> (non <svg> inline): solo cosi' tenendoci premuto sopra (telefono) o col tasto destro
-// (PC) il browser offre "Salva immagine" - e offre SOLO il QR, non il resto del biglietto.
-function qrImg(text, alt){
+// Un QR come <img> con una vera immagine PNG (non un <svg> disegnato nella pagina): solo cosi'
+// tenendoci premuto sopra (telefono, "Aggiungi a Foto") o col tasto destro (PC) si puo' salvare il
+// QR come immagine - e si salva SOLO il QR, non il resto del biglietto.
+async function qrImg(text, alt){
   const img = document.createElement("img");
-  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(qrSvg(text, 5, 2));
+  img.src = await qrPng(text, 8, 2);
   img.alt = alt;
   return img;
 }
 
-// Sposta la "finestra" visibile del biglietto dal basso verso l'alto: a fraction=0 e' invisibile,
-// a fraction=1 e' mostrato per intero. Si vede sempre la parte BASSA per prima (dove sono QR e codice,
-// pero' sfocati finche' non si sbloccano) e il resto del biglietto (logo, titolo) sale sopra di essa.
+// Sposta il biglietto in verticale: a fraction=0 e' spinto fuori dallo schermo, sotto al bordo
+// inferiore (come se stesse per essere "stampato" da una fessura li' sotto); a fraction=1 e' fermo
+// al suo posto, del tutto visibile. Aumentando "fraction" il biglietto sale.
 function setReveal(ticket, fraction){
-  const hiddenTop = Math.max(0, Math.min(1, 1 - fraction)) * 100;
-  ticket.style.clipPath = "inset(" + hiddenTop + "% 0 0 0)";
+  const hiddenPercent = Math.max(0, Math.min(1, 1 - fraction)) * 100;
+  ticket.style.transform = "translateY(" + hiddenPercent + "%)";
 }
 
 // Disegna il biglietto. "locked"=true mostra QR e codice sfocati, non quelli veri (che il server
 // non rivela finche' la caccia al tesoro non e' completa): non c'e' nulla da leggere dietro la sfocatura.
-function buildTicket(locked, code, msgText, note){
+// "docked"=true lo tiene agganciato in basso allo schermo (per l'animazione di "stampa" della caccia
+// al tesoro); altrimenti resta semplicemente nella pagina, come il biglietto normale di sempre.
+async function buildTicket(locked, docked, code, msgText, note){
   $("start").hidden = true; $("quiz").hidden = true;
   const out = $("result"); out.hidden = false; out.innerHTML = "";
   const msg = document.createElement("p"); msg.className = "msg ok"; msg.textContent = msgText;
 
-  const ticket = document.createElement("div"); ticket.className = "ticket" + (locked ? " locked" : "");
+  const ticket = document.createElement("div");
+  ticket.className = "ticket" + (locked ? " locked" : "") + (docked ? " docked" : "");
   const top = document.createElement("div"); top.className = "ticket-top";
   const logo = document.createElement("img"); logo.className = "ticket-logo"; logo.src = "bollo-bianco.png";
   logo.alt = "Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria";
@@ -202,33 +206,34 @@ function buildTicket(locked, code, msgText, note){
   const bottom = document.createElement("div"); bottom.className = "ticket-bottom";
   const qr = document.createElement("div"); qr.className = "ticket-qr";
   const adminUrl = new URL("admin.html", location.href).href + "#" + code;
-  qr.append(qrImg(locked ? "CRI-QUIZ-HIV" : adminUrl, "QR del codice")); // bloccato: QR finto/non funzionante, e comunque sfocato
+  qr.append(await qrImg(locked ? "CRI-QUIZ-HIV" : adminUrl, "QR del codice")); // bloccato: QR finto/non funzionante, e comunque sfocato
   const codeEl = document.createElement("div"); codeEl.className = "ticket-code"; codeEl.textContent = code;
   const noteEl = document.createElement("p"); noteEl.className = "ticket-note"; noteEl.textContent = note;
   bottom.append(qr, codeEl, noteEl);
 
   ticket.append(top, perf, bottom);
-  const hint = document.createElement("p"); hint.className = "hint";
-  hint.textContent = locked
-    ? "Il biglietto si sblocca quando trovi tutte le tappe."
-    : "Mostra questo biglietto e non perderlo: il codice vale una sola volta.";
-  out.append(msg, ticket, hint);
+  out.append(msg, ticket);
+  if (!docked) { // il biglietto normale (fuori dalla caccia al tesoro) resta come sempre, con la sua nota
+    const hint = document.createElement("p"); hint.className = "hint";
+    hint.textContent = "Mostra questo biglietto e non perderlo: il codice vale una sola volta.";
+    out.append(hint);
+  }
   return ticket;
 }
 
 // Biglietto definitivo, col vero codice e il vero QR: usato quando la caccia al tesoro e' disattivata
 // (come oggi) o appena completata.
-function showTicket(code, reused, msgText){
-  const ticket = buildTicket(false, code, msgText || (reused
+async function showTicket(code, reused, msgText){
+  await buildTicket(false, false, code, msgText || (reused
     ? "Hai già completato questo quiz da questo telefono: ecco di nuovo il tuo biglietto."
     : "Ecco il tuo biglietto."), "codice valido una sola volta");
-  setReveal(ticket, 1);
 }
 
-// Biglietto "a tappe" della caccia al tesoro: cresce dal basso verso l'alto ad ogni tappa trovata.
+// Biglietto "a tappe" della caccia al tesoro: resta agganciato in basso allo schermo e sale un po'
+// di piu' ad ogni tappa trovata, come se stesse uscendo da una fessura sotto al bordo dello schermo.
 // Resta sfocato (QR e codice finti) finche' "code" non arriva dal server, cioe' finche' non sono
 // state trovate tutte le tappe: prima di allora non c'e' nessun codice vero da proteggere o rivelare.
-function renderHuntTicket(completed, total, code, reused){
+async function renderHuntTicket(completed, total, code, reused){
   const fraction = total > 0 ? Math.min(1, completed / total) : 1;
   const locked = !code;
   const huntFound = completed - 1, huntTotal = total - 1;
@@ -238,7 +243,7 @@ function renderHuntTicket(completed, total, code, reused){
         ? "Hai già completato questo quiz da questo telefono: ecco di nuovo il tuo biglietto."
         : "Complimenti, hai trovato tutte le tappe: ecco il tuo biglietto.");
   const note = locked ? "trova tutte le tappe per sbloccarlo" : "codice valido una sola volta";
-  const ticket = buildTicket(locked, locked ? "••••-••••" : code, msgText, note);
+  const ticket = await buildTicket(locked, true, locked ? "••••-••••" : code, msgText, note);
   // Parte da un pelo piu' in basso e sale fino al punto giusto: si vede il biglietto "salire" un po'
   // ad ogni tappa, anche quando la pagina si e' appena caricata.
   setReveal(ticket, Math.max(0, fraction - 1 / total));

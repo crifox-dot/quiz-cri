@@ -64,8 +64,11 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-of
 
 /* biglietto col codice */
 .ticket{max-width:360px;margin:0 auto;border-radius:24px;overflow:hidden;background:var(--panel);
-  box-shadow:0 24px 60px -24px rgba(0,0,0,.65);border:1px solid var(--line);
-  transition:clip-path .6s ease}
+  box-shadow:0 24px 60px -24px rgba(0,0,0,.65);border:1px solid var(--line)}
+/* biglietto della caccia al tesoro: resta fermo in basso sullo schermo e "sale" da sotto il bordo,
+   come se uscisse da una fessura, ad ogni tappa trovata */
+.ticket.docked{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  margin:0 auto;z-index:40;transition:transform .6s ease}
 .ticket-top{background:linear-gradient(165deg,var(--red-hi),var(--red) 75%);color:#fff;
   padding:20px 24px 18px;text-align:center}
 .ticket-logo{display:block;height:132px;width:auto;margin:0 auto 14px}
@@ -122,16 +125,10 @@ legend.qtext{padding:0}
 .mt22{margin-top:22px}
 .actions.flush{margin-top:0}
 
-/* caccia al tesoro: QR delle tappe, pensati per essere stampati */
+/* caccia al tesoro: QR delle tappe, da salvare come immagini (tasto destro o tenendo premuto) */
 label.field input[type=checkbox]{width:auto;margin:0 8px 0 0;vertical-align:middle;accent-color:var(--red)}
 .hunt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin:18px 0}
 .hunt-item{border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px;text-align:center}
-.hunt-item svg{display:block;width:100%;height:auto;margin:0 auto 10px}
+.hunt-item img{display:block;width:100%;height:auto;margin:0 auto 10px}
 .hunt-item p{margin:0;color:#1c140f;font:700 .95rem/1.3 inherit}
 .hunt-item span{display:block;margin-top:4px;color:#6e6255;font:.78rem/1.3 ui-monospace,"SFMono-Regular",Menlo,monospace}
-@media print{
-  body *{display:none!important}
-  .hunt-grid{display:block!important;position:absolute;top:0;left:0;width:100%}
-  .hunt-grid .hunt-item{display:inline-block!important;width:220px;margin:10px;vertical-align:top}
-  .hunt-grid .hunt-item *{display:revert!important}
-}

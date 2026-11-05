@@ -1276,4 +1276,25 @@ global.qrSvg=function(text,cell,quiet){
   for(var r=0;r<n;r++)for(var c=0;c<n;c++)if(q.modules[r][c])path+="M"+(c+quiet)+" "+(r+quiet)+"h1v1h-1z";
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+size+' '+size+'" width="'+(size*cell)+'" height="'+(size*cell)+'" shape-rendering="crispEdges" role="img" aria-label="QR code"><rect width="100%" height="100%" fill="#fff"/><path d="'+path+'" fill="#000"/></svg>';
 };
+// Restituisce il QR come immagine PNG vera (data URL), disegnando l'SVG su un canvas.
+// Serve per poterlo salvare come foto da telefono (tenendoci premuto sopra) o da PC (tasto destro):
+// un <img> con un SVG come sorgente non basta su alcuni browser (es. Safari su iPhone non offre
+// "Aggiungi a Foto" per le immagini vettoriali), un PNG invece funziona ovunque.
+global.qrPng=function(text,cell,quiet){
+  return new Promise(function(resolve,reject){
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+        var canvas=document.createElement("canvas");
+        canvas.width=w;canvas.height=h;
+        var ctx=canvas.getContext("2d");
+        ctx.drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL("image/png"));
+      }catch(e){reject(e);}
+    };
+    img.onerror=function(){reject(new Error("QR non disegnabile"));};
+    img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(global.qrSvg(text,cell,quiet));
+  });
+};
 })(window);

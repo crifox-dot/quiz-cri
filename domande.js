@@ -148,25 +148,27 @@ async function loadQuiz() {
 async function loadHunt() {
   const r = await api("/api/editor/hunt");
   if (r.status === 401) { forget(); showLogin("Sessione scaduta: accedi di nuovo."); return false; }
-  hunt = await r.json(); renderHunt();
+  hunt = await r.json(); await renderHunt();
   return true;
 }
 
 function huntUrl(t) { return new URL("index.html#tappa=" + t, location.href).href; }
 
-function renderHunt() {
+async function renderHunt() {
   $("huntEnabled").checked = !!hunt.enabled;
   $("huntState").textContent = hunt.enabled ? "Attiva" : "Non attiva";
   const grid = $("huntGrid"); grid.innerHTML = "";
-  (hunt.tokens || []).forEach((t, i) => {
+  const tokens = hunt.tokens || [];
+  $("huntHint").hidden = !tokens.length;
+  // Immagini PNG vere (non SVG incorporati): solo cosi' si possono salvare come foto da telefono o PC.
+  const pngs = await Promise.all(tokens.map((t) => qrPng(huntUrl(t), 8, 1)));
+  tokens.forEach((t, i) => {
     const item = el("div", { className: "hunt-item" },
+      el("img", { src: pngs[i], alt: "QR della tappa " + (i + 1) }),
       el("p", { textContent: "Tappa " + (i + 1) }),
       el("span", { textContent: t }));
-    const svg = el("div"); svg.innerHTML = qrSvg(huntUrl(t), 4, 1);
-    item.insertBefore(svg, item.firstChild);
     grid.append(item);
   });
-  $("huntPrint").hidden = !hunt.tokens || !hunt.tokens.length;
 }
 
 $("huntSave").onclick = async () => {
@@ -175,7 +177,7 @@ $("huntSave").onclick = async () => {
     if (r.status === 401) { forget(); showLogin("Sessione scaduta: accedi di nuovo."); return; }
     const d = await r.json();
     if (!r.ok) { show($("huntMsg"), "ko", d.error || "Salvataggio non riuscito."); return; }
-    hunt = d; renderHunt();
+    hunt = d; await renderHunt();
     show($("huntMsg"), "ok", hunt.enabled ? "Caccia al tesoro attiva." : "Caccia al tesoro non attiva.");
   } catch { show($("huntMsg"), "ko", "Server non raggiungibile."); }
 };
@@ -193,13 +195,11 @@ $("huntGenerate").onclick = async () => {
     if (r.status === 401) { forget(); showLogin("Sessione scaduta: accedi di nuovo."); return; }
     const d = await r.json();
     if (!r.ok) { show($("huntMsg"), "ko", d.error || "Generazione non riuscita."); return; }
-    hunt = d; renderHunt();
-    show($("huntMsg"), "ok", "Generati " + hunt.tokens.length + " nuovi QR. Stampali e posizionali in giro, in qualsiasi ordine.");
+    hunt = d; await renderHunt();
+    show($("huntMsg"), "ok", "Generati " + hunt.tokens.length + " nuovi QR. Salvali come foto e posizionali in giro, in qualsiasi ordine.");
   } catch { show($("huntMsg"), "ko", "Server non raggiungibile."); }
   finally { $("huntGenerate").disabled = false; }
 };
-
-$("huntPrint").onclick = () => window.print();
 
 $("enter").onclick = async () => {
   try {
