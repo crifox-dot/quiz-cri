@@ -117,3 +117,17 @@ legend.qtext{padding:0}
 .mt18{margin-top:18px}
 .mt22{margin-top:22px}
 .actions.flush{margin-top:0}
+
+/* caccia al tesoro: QR delle tappe, pensati per essere stampati */
+label.field input[type=checkbox]{width:auto;margin:0 8px 0 0;vertical-align:middle;accent-color:var(--red)}
+.hunt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin:18px 0}
+.hunt-item{border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px;text-align:center}
+.hunt-item svg{display:block;width:100%;height:auto;margin:0 auto 10px}
+.hunt-item p{margin:0;color:#1c140f;font:700 .95rem/1.3 inherit}
+.hunt-item span{display:block;margin-top:4px;color:#6e6255;font:.78rem/1.3 ui-monospace,"SFMono-Regular",Menlo,monospace}
+@media print{
+  body *{display:none!important}
+  .hunt-grid{display:block!important;position:absolute;top:0;left:0;width:100%}
+  .hunt-grid .hunt-item{display:inline-block!important;width:220px;margin:10px;vertical-align:top}
+  .hunt-grid .hunt-item *{display:revert!important}
+}

@@ -7,6 +7,7 @@
 <title>Modifica domande · Quiz sull'HIV</title>
 <script src="theme.js"></script>
 <link rel="stylesheet" href="style.css">
+<script src="qrcode.js"></script>
 </head>
 <body>
 <header class="top">
@@ -63,6 +64,32 @@
     <button id="logout" class="ghost">Esci</button>
     <span id="state" class="state"></span>
   </div>
+</section>
+
+<section id="hunt" hidden>
+  <h1 class="mt22">Caccia <em>al tesoro</em></h1>
+  <p class="lead">Facoltativa: se non la attivi il sito funziona esattamente come oggi. Genera dei QR da stampare e
+    posizionare in giro: chi li trova (in qualsiasi ordine, non serve stamparli o scoprirli in sequenza) riceve il
+    biglietto solo dopo aver fatto il quiz E trovato tutte le tappe. Cambiare le domande del quiz non richiede
+    rifare questi QR: sono indipendenti.</p>
+
+  <div class="passbox">
+    <label class="field" for="huntEnabled"><input type="checkbox" id="huntEnabled"> Attiva caccia al tesoro</label>
+    <button id="huntSave" class="ghost small">Salva</button>
+    <span id="huntState" class="state"></span>
+  </div>
+
+  <div class="passbox">
+    <label class="field" for="huntCount">Numero di tappe da generare</label>
+    <input id="huntCount" type="number" min="1" max="20" step="1" value="5">
+    <button id="huntGenerate">Genera nuovi QR</button>
+    <p class="hint">Genera un nuovo insieme di QR: quelli già stampati con i QR precedenti smettono di funzionare da
+      quel momento. Chi stava già cercando le tappe dovrà ripartire con i QR nuovi.</p>
+  </div>
+
+  <div id="huntMsg" aria-live="polite" class="mt18"></div>
+  <div id="huntGrid" class="hunt-grid"></div>
+  <button id="huntPrint" class="ghost" hidden>Stampa i QR</button>
 </section>
 </main>
 <script src="domande.js"></script>

@@ -4,6 +4,12 @@ const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
 let questions = [], version = 0, needed = 0, quizTitle = "Quiz sull'HIV";
 let order = [], answers = {}, step = 0; // answers: { idDomanda: indiceRispostaScelta }
 
+// Caccia al tesoro: il QR di una tappa porta qui con "#tappa=TOKEN" nell'indirizzo.
+// Se la caccia al tesoro non e' attiva, questo pezzo di codice non fa nulla: il sito resta come sempre.
+let huntToken = null;
+try { const m = location.hash.match(/^#tappa=([^&]+)/); if (m) huntToken = decodeURIComponent(m[1]); } catch {}
+const clearHash = () => history.replaceState(null, "", location.pathname + location.search);
+
 // mescola l'ordine delle domande (Fisher-Yates con numeri casuali sicuri)
 function shuffle(n){
   const a = Array.from({length:n}, (_, i) => i);
@@ -34,10 +40,46 @@ async function loadQuestions(){
     plural(needed, "risposta giusta", "risposte giuste") + " ricevi un codice personale, valido una sola volta.";
 }
 
-loadQuestions().then(() => {
+loadQuestions().then(async () => {
   $("go").disabled = false;
   $("loadMsg").hidden = true;
+  if (huntToken) {
+    const t = huntToken; clearHash();
+    try { await handleHuntVisit(t); } catch { showHuntNote("Server non raggiungibile: prova a scansionare di nuovo questo QR."); }
+  }
 }).catch(() => { setTitle("Quiz sull'HIV"); $("loadMsg").textContent = "Impossibile caricare il quiz. Riprova più tardi."; });
+
+function showHuntNote(text) {
+  const p = document.createElement("p"); p.className = "hint"; p.textContent = text;
+  $("start").append(p);
+}
+
+// Scansione di una tappa della caccia al tesoro (arrivata con "#tappa=" nell'indirizzo).
+// Se la caccia al tesoro non e' attiva sul server, questa funzione non cambia nulla: resta la pagina normale.
+async function handleHuntVisit(token) {
+  const r = await (await fetch(API + "/api/hunt/visit", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, visitor: visitorId() })
+  })).json();
+  if (!r.enabled) return; // caccia al tesoro non attiva: pagina normale, nessun cambiamento
+  if (!r.valid) return showHuntNote("Questo QR non è più valido.");
+  if (r.code) return showTicket(r.code, r.reused);
+  if (r.passed) return showHuntProgress(r.found, r.total);
+  showHuntNote("Tappa trovata (" + r.found + " di " + r.total + "). Fai il quiz per continuare la caccia al tesoro.");
+}
+
+// Schermata di avanzamento: quiz già superato, mancano ancora delle tappe da trovare
+function showHuntProgress(found, total) {
+  $("start").hidden = true; $("quiz").hidden = true;
+  const out = $("result"); out.hidden = false; out.innerHTML = "";
+  const msg = document.createElement("p"); msg.className = "msg ok";
+  msg.textContent = "Hai superato il quiz. Tappe trovate: " + found + " di " + total + ".";
+  const hint = document.createElement("p"); hint.className = "hint";
+  hint.textContent = found >= total
+    ? "Scansiona di nuovo l'ultimo QR per ricevere il biglietto."
+    : "Continua a cercare gli altri QR in giro: ti servono tutti per ricevere il biglietto.";
+  out.append(msg, hint);
+}
 
 function start(){
   order = shuffle(questions.length);
@@ -123,10 +165,23 @@ function showResult(r){
     out.append(msg, b);
     return;
   }
-  msg.className = "msg ok";
-  msg.textContent = r.reused
+  if (r.hunt && !r.code) { // caccia al tesoro attiva: quiz superato, ma mancano ancora delle tappe
+    return showHuntProgress(r.huntFound, r.huntTotal);
+  }
+  const text = r.reused
     ? "Hai già completato questo quiz da questo telefono: ecco di nuovo il tuo biglietto."
     : "Ben fatto: " + r.score + " risposte giuste su " + r.total + ". Ecco il tuo biglietto.";
+  showTicket(r.code, r.reused, text);
+}
+
+// Biglietto col codice e il QR: usato sia al termine del quiz, sia al completamento della caccia al tesoro
+function showTicket(code, reused, msgText){
+  $("start").hidden = true; $("quiz").hidden = true;
+  const out = $("result"); out.hidden = false; out.innerHTML = "";
+  const msg = document.createElement("p"); msg.className = "msg ok";
+  msg.textContent = msgText || (reused
+    ? "Hai già completato questo quiz da questo telefono: ecco di nuovo il tuo biglietto."
+    : "Ecco il tuo biglietto.");
 
   const ticket = document.createElement("div"); ticket.className = "ticket";
   const top = document.createElement("div"); top.className = "ticket-top";
@@ -142,14 +197,23 @@ function showResult(r){
 
   const bottom = document.createElement("div"); bottom.className = "ticket-bottom";
   const qr = document.createElement("div"); qr.className = "ticket-qr";
-  const code = document.createElement("div"); code.className = "ticket-code"; code.textContent = r.code;
+  const codeEl = document.createElement("div"); codeEl.className = "ticket-code"; codeEl.textContent = code;
   const note = document.createElement("p"); note.className = "ticket-note"; note.textContent = "codice valido una sola volta";
-  bottom.append(qr, code, note);
+  bottom.append(qr, codeEl, note);
 
   ticket.append(top, perf, bottom);
   const hint = document.createElement("p"); hint.className = "hint";
   hint.textContent = "Mostra questo biglietto e non perderlo: il codice vale una sola volta.";
   out.append(msg, ticket, hint);
-  const adminUrl = new URL("admin.html", location.href).href + "#" + r.code;
+  const adminUrl = new URL("admin.html", location.href).href + "#" + code;
   qr.innerHTML = qrSvg(adminUrl, 5, 2); // SVG generato qui nel browser, nessun servizio esterno
 }
+
+// Se la pagina resta aperta e si scansiona un'altra tappa (stessa scheda), l'indirizzo cambia da solo:
+// non serve ricaricare la pagina per accorgersene.
+window.addEventListener("hashchange", () => {
+  let m; try { m = location.hash.match(/^#tappa=([^&]+)/); } catch {}
+  if (!m) return;
+  const t = decodeURIComponent(m[1]); clearHash();
+  handleHuntVisit(t).catch(() => showHuntNote("Server non raggiungibile: prova a scansionare di nuovo questo QR."));
+});

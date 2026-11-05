@@ -14,6 +14,7 @@ const saved = {
 let token = saved.get();
 let quiz = null;   // copia di lavoro: { version, pass, questions: [{ id?, q, o: [], a }] }
 let dirty = false; // true = ci sono modifiche non ancora pubblicate
+let hunt = null;   // caccia al tesoro: { enabled, tokens: [] }
 
 const api = (path, body) => fetch(API + path, {
   method: body ? "POST" : "GET",
@@ -131,10 +132,10 @@ $("pass").oninput = () => { quiz.pass = $("pass").value === "" ? NaN : Number($(
 
 // ---------- accesso e salvataggio ----------
 function showLogin(msg) {
-  $("editor").hidden = true; $("login").hidden = false;
+  $("editor").hidden = true; $("hunt").hidden = true; $("login").hidden = false;
   if (msg) show($("loginMsg"), "ko", msg);
 }
-function showEditor() { $("login").hidden = true; $("editor").hidden = false; }
+function showEditor() { $("login").hidden = true; $("editor").hidden = false; $("hunt").hidden = false; }
 
 async function loadQuiz() {
   const r = await api("/api/editor/quiz");
@@ -143,11 +144,69 @@ async function loadQuiz() {
   return true;
 }
 
+// ---------- caccia al tesoro (facoltativa, indipendente dalle domande) ----------
+async function loadHunt() {
+  const r = await api("/api/editor/hunt");
+  if (r.status === 401) { forget(); showLogin("Sessione scaduta: accedi di nuovo."); return false; }
+  hunt = await r.json(); renderHunt();
+  return true;
+}
+
+function huntUrl(t) { return new URL("index.html#tappa=" + t, location.href).href; }
+
+function renderHunt() {
+  $("huntEnabled").checked = !!hunt.enabled;
+  $("huntState").textContent = hunt.enabled ? "Attiva" : "Non attiva";
+  const grid = $("huntGrid"); grid.innerHTML = "";
+  (hunt.tokens || []).forEach((t, i) => {
+    const item = el("div", { className: "hunt-item" },
+      el("p", { textContent: "Tappa " + (i + 1) }),
+      el("span", { textContent: t }));
+    const svg = el("div"); svg.innerHTML = qrSvg(huntUrl(t), 4, 1);
+    item.insertBefore(svg, item.firstChild);
+    grid.append(item);
+  });
+  $("huntPrint").hidden = !hunt.tokens || !hunt.tokens.length;
+}
+
+$("huntSave").onclick = async () => {
+  try {
+    const r = await api("/api/editor/hunt/save", { enabled: $("huntEnabled").checked });
+    if (r.status === 401) { forget(); showLogin("Sessione scaduta: accedi di nuovo."); return; }
+    const d = await r.json();
+    if (!r.ok) { show($("huntMsg"), "ko", d.error || "Salvataggio non riuscito."); return; }
+    hunt = d; renderHunt();
+    show($("huntMsg"), "ok", hunt.enabled ? "Caccia al tesoro attiva." : "Caccia al tesoro non attiva.");
+  } catch { show($("huntMsg"), "ko", "Server non raggiungibile."); }
+};
+
+$("huntGenerate").onclick = async () => {
+  const count = Number($("huntCount").value);
+  if (!Number.isInteger(count) || count < 1 || count > 20) return show($("huntMsg"), "ko", "Scegli da 1 a 20 tappe.");
+  const warn = hunt && hunt.tokens && hunt.tokens.length
+    ? "Generare " + count + " nuovi QR delle tappe?\nI " + hunt.tokens.length + " QR già stampati smetteranno di funzionare e chi stava già cercando le tappe dovrà ripartire con quelli nuovi."
+    : "Generare " + count + " nuovi QR delle tappe?";
+  if (!confirm(warn)) return;
+  $("huntGenerate").disabled = true;
+  try {
+    const r = await api("/api/editor/hunt/generate", { count });
+    if (r.status === 401) { forget(); showLogin("Sessione scaduta: accedi di nuovo."); return; }
+    const d = await r.json();
+    if (!r.ok) { show($("huntMsg"), "ko", d.error || "Generazione non riuscita."); return; }
+    hunt = d; renderHunt();
+    show($("huntMsg"), "ok", "Generati " + hunt.tokens.length + " nuovi QR. Stampali e posizionali in giro, in qualsiasi ordine.");
+  } catch { show($("huntMsg"), "ko", "Server non raggiungibile."); }
+  finally { $("huntGenerate").disabled = false; }
+};
+
+$("huntPrint").onclick = () => window.print();
+
 $("enter").onclick = async () => {
   try {
     const r = await api("/api/editor/login", { password: $("pw").value });
     if (!r.ok) return show($("loginMsg"), "ko", await denied(r));
     token = (await r.json()).token; saved.set(token); $("pw").value = ""; $("loginMsg").innerHTML = "";
+    await loadHunt();
     if (quiz) showEditor(); // sessione scaduta mentre c'erano modifiche: la bozza e' ancora qui
     else if (await loadQuiz()) showEditor();
   } catch { show($("loginMsg"), "ko", "Server non raggiungibile."); }
@@ -196,7 +255,7 @@ $("logout").onclick = async () => {
   if (token) {
     try {
       const d = await (await api("/api/editor/session")).json();
-      if (d.ok) { if (await loadQuiz()) showEditor(); return; }
+      if (d.ok) { await loadHunt(); if (await loadQuiz()) showEditor(); return; }
       forget(); // sessione scaduta o chiusa
     } catch { /* server non raggiungibile: tengo il gettone */ }
   }
