@@ -339,20 +339,19 @@ async function buildTicket(locked, docked, code, msgText, note, belowMsg){
     const hint = document.createElement("p"); hint.className = "hint";
     hint.textContent = "Mostra questo biglietto e non perderlo: il codice vale una sola volta.";
     out.append(hint);
-  } else {
-    enableTicketDrag(ticket, locked);
   }
+  enableTicketDrag(ticket, locked); // l'effetto "staccabile" vale per ogni biglietto, caccia al tesoro o no
   return ticket;
 }
 
-// Fa "staccare" un pelo il biglietto agganciato in basso quando ci si preme sopra col dito e si
-// muove, come se fosse davvero appoggiato li' sotto: lo fa seguire il dito (ombra compresa) per un
-// piccolo tratto, da' una vibrazione leggera (come i tasti della tastiera di iPhone) non appena parte
-// il movimento, e quando si rilascia torna al suo posto. Si tiene premuto un attimo (HOLD_MS) prima
-// che il trascinamento si armi, cosi' un tocco distratto sul biglietto non lo fa muovere per sbaglio.
-// Da sbloccato (il QR vero e' stato rivelato) si puo' muovere un pelo in QUALSIASI direzione; da
-// bloccato (il biglietto si vede ancora a malapena, sotto il bordo) si puo' tirare SOLO verso il
-// centro dello schermo, cioe' un po' piu' in alto, per non rompere l'illusione che sia incollato li'.
+// Fa "staccare" un pelo il biglietto quando ci si preme sopra col dito e si muove, come se fosse
+// davvero appoggiato li' sotto: lo fa seguire il dito (ombra compresa) per un piccolo tratto, e quando
+// si rilascia torna al suo posto. Si tiene premuto un attimo (HOLD_MS) prima che il trascinamento si
+// armi, cosi' un tocco distratto sul biglietto non lo fa muovere per sbaglio. Da sbloccato (il QR vero
+// e' stato rivelato, oppure fuori dalla caccia al tesoro) si puo' muovere un pelo in QUALSIASI
+// direzione; da bloccato (dentro la caccia al tesoro, il biglietto si vede ancora a malapena sotto il
+// bordo) si puo' tirare SOLO verso il centro dello schermo, cioe' un po' piu' in alto, per non
+// rompere l'illusione che sia incollato li'.
 function enableTicketDrag(ticket, locked){
   const HOLD_MS = 160;   // quanto tenere premuto prima che si armi (evita tocchi per sbaglio)
   const CANCEL_PX = 6;   // se si muove piu' di cosi' PRIMA di armarsi, non e' una pressione volontaria
@@ -361,7 +360,6 @@ function enableTicketDrag(ticket, locked){
   let holdTimer = null, armed = false, startX = 0, startY = 0;
 
   const baseTransform = () => "translateY(" + (ticket.dataset.hiddenPct || 0) + "%)";
-  const vibrate = () => { try { navigator.vibrate && navigator.vibrate(8); } catch {} };
 
   function applyDrag(dx, dy){
     ticket.style.transform = baseTransform() + " translate(" + dx + "px," + dy + "px) scale(1.018)";
@@ -416,7 +414,6 @@ function enableTicketDrag(ticket, locked){
     holdTimer = setTimeout(() => {
       armed = true;
       ticket.classList.add("dragging");
-      vibrate();
     }, HOLD_MS);
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
