@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: https://steep-haze-2da0.cloudflare-vbmev.workers.dev; connect-src https://steep-haze-2da0.cloudflare-vbmev.workers.dev; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#16120f">
+<meta name="robots" content="noindex">
+<title>Modifica domande · Quiz sull'HIV</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="nuova.css">
+<script src="qrcode.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="n-only n-sticker" aria-hidden="true"><b id="nWord1">QUIZ</b><b id="nWord2">HIV</b></div>
+  <img id="logo" src="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-dark="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-light="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo-rosso" draggable="false" alt="Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria">
+  <div class="topbtns">
+    <button id="btnA11y" class="topbtn" type="button" aria-pressed="false" aria-label="Alto contrasto e testo più spazioso" title="Alto contrasto">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="10"></circle>
+        <circle cx="12" cy="7" r="1.6" fill="currentColor" stroke="none"></circle>
+        <path d="M6.3 10.1c1.7.9 3.7 1.4 5.7 1.4s4-.5 5.7-1.4"></path>
+        <path d="M12 11.5v3.2l-2.6 4.6M12 14.7l2.6 4.6"></path>
+      </svg>
+    </button>
+    <button id="btnLight" class="topbtn" type="button" aria-pressed="false" aria-label="Modalità chiara" title="Modalità chiara">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="4.2"></circle>
+        <path d="M12 2.5v2.3M12 19.2v2.3M21.5 12h-2.3M4.8 12H2.5M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6M18.4 18.4l-1.6-1.6M7.2 7.2 5.6 5.6"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+<main>
+<h1>Modifica <em>domande</em></h1>
+
+<section id="login" hidden>
+  <p class="lead">Area riservata a chi può modificare le domande del quiz.</p>
+  <label class="field" for="pw">Password</label>
+  <input id="pw" type="password" autocomplete="current-password">
+  <button id="enter">Accedi</button>
+  <div id="loginMsg" aria-live="polite" class="mt18"></div>
+</section>
+
+<section id="editor" hidden>
+  <p class="lead">Le modifiche restano una bozza finché non premi <strong>Pubblica</strong>. I codici già emessi non cambiano.</p>
+
+  <div class="passbox usage">
+    <span class="field" id="usageLabel">Richieste a Cloudflare oggi</span>
+    <div class="usage-row">
+      <div class="progress" id="usageProgress" role="progressbar" aria-labelledby="usageLabel" aria-valuemin="0" aria-valuemax="100000"><i id="usageBar"></i><b class="n-only n-dot" id="usageDot"></b></div>
+      <span id="usageCount" class="usage-count">…</span>
+    </div>
+    <p id="usageInfo" class="hint" aria-live="polite">Caricamento…</p>
+    <button id="usageRefresh" class="ghost small" type="button">Aggiorna</button>
+  </div>
+
+  <fieldset class="passbox">
+    <legend class="field">Grafica del sito</legend>
+    <div class="choice">
+      <label><input type="radio" name="grafica" value="nuova"> Nuova (giocosa)</label>
+      <label><input type="radio" name="grafica" value="classica"> Classica</label>
+    </div>
+    <div class="actions flush">
+      <button id="graficaApply" class="small" disabled>Conferma grafica</button>
+      <span id="graficaState" class="state"></span>
+    </div>
+    <p class="hint">Vale per tutto il sito: quiz, pannello admin e questa pagina. Cambia solo dopo aver premuto Conferma grafica (non serve Pubblica).</p>
+  </fieldset>
+
+  <fieldset class="passbox">
+    <legend class="field">Modalità manutenzione</legend>
+    <p id="maintState" class="maint-state" aria-live="polite">Stato non ancora letto…</p>
+    <div class="actions flush">
+      <button id="maintToggle" class="small" disabled>Metti il sito in manutenzione</button>
+    </div>
+    <p class="hint">In manutenzione la pagina del quiz e il pannello admin non funzionano: chi li apre vede solo l'avviso «Sito in manutenzione» (anche chi stava già rispondendo). Questa pagina invece resta sempre accessibile, così puoi riaprire il sito quando vuoi. Il cambio vale subito, ma su alcuni telefoni può servire fino a un minuto.</p>
+  </fieldset>
+
+  <fieldset class="passbox">
+    <legend class="field">Modalità classifica</legend>
+    <label class="field choice"><input type="checkbox" id="lbOn"> Attiva la classifica (nickname e punti)</label>
+    <label class="field choice"><input type="checkbox" id="lbTicket"> Crea anche il biglietto col codice</label>
+    <label class="field choice"><input type="checkbox" id="lbTimer"> Timer per ogni domanda</label>
+    <label class="field" for="lbTimerSec">Secondi per domanda (da 5 a 120)</label>
+    <input id="lbTimerSec" type="number" min="5" max="120" step="1" inputmode="numeric" value="20">
+    <div class="actions flush mt18">
+      <button id="lbSave" class="small" disabled>Conferma</button>
+      <span id="lbState" class="state"></span>
+    </div>
+    <p class="hint">Con la classifica attiva chi gioca sceglie un nickname (solo lettere) e riceve punti: 100 per ogni risposta giusta, di più per quelle giuste di fila. Alla fine vede i punti, quali domande ha sbagliato (mai la risposta giusta) e la classifica. Può rifare il quiz: una domanda che aveva sbagliato, se la indovina, vale la metà (un terzo dopo due errori, e così via); quelle già indovinate non danno altri punti. Ogni giocatore sparisce da solo dopo 7 giorni.</p>
+    <p class="hint">Timer: parte 1,5 secondi dopo che sono comparse le risposte. Rispondendo nella prima metà del tempo (verde) i punti valgono doppio, poi ×1,5 (giallo, fino all'80%) e ×1,2 (rosso); a tempo scaduto si può ancora rispondere, ma senza bonus. Col timer attivo non c'è il pulsante Indietro. Scegli il tempo pensando alla domanda più lunga.</p>
+    <p class="hint">Senza biglietto non viene creato nessun codice, né col quiz né con la caccia al tesoro, e nel pannello admin al posto della convalida c'è la classifica. Se nel sottotitolo hai scritto del codice o del biglietto, ricordati di cambiarlo.</p>
+  </fieldset>
+
+  <fieldset class="passbox">
+    <legend class="field">Parole bloccate nei nickname</legend>
+    <label class="field" for="nwWord">Parola da bloccare</label>
+    <input id="nwWord" type="text" maxlength="20" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Solo lettere">
+    <label class="field choice"><input type="checkbox" id="nwInside" checked> Bloccala anche dentro ad altre parole (es. «xxparolaxx»)</label>
+    <div class="actions flush">
+      <button id="nwAdd" class="small" type="button">Aggiungi</button>
+    </div>
+    <div id="nwMsg" aria-live="polite" class="mt18"></div>
+    <!-- elenco delle parole aggiunte: si apre e si chiude toccando il titolo (di base e' chiuso) -->
+    <details id="nwBox" class="nwbox">
+      <summary id="nwSummary">Parole aggiunte</summary>
+      <ul id="nwList" class="nwlist"></ul>
+    </details>
+    <p class="hint">Il sito blocca già di suo parolacce, insulti, bestemmie, termini politici e nomi di dittatori in italiano, inglese e spagnolo: qui aggiungi quelle che mancano (per esempio soprannomi o insulti locali). Se una parola è già bloccata te lo dice. «Anche dentro ad altre parole» ferma anche chi la nasconde in un nome più lungo o ripete le lettere, ma con parole corte blocca pure nomi innocenti: senza la spunta vale solo se il nickname è esattamente quella parola.</p>
+  </fieldset>
+
+  <fieldset class="passbox">
+    <legend class="field">Colori dei QR code</legend>
+    <div class="qrcolors">
+      <div class="qrcolor">
+        <label class="field" for="qrDark">Quadratini</label>
+        <div class="qrcolor-row">
+          <input id="qrDarkPick" type="color" value="#000000" aria-label="Scegli il colore dei quadratini">
+          <input id="qrDark" type="text" maxlength="7" autocomplete="off" spellcheck="false" placeholder="#000000">
+        </div>
+      </div>
+      <div class="qrcolor">
+        <label class="field" for="qrLight">Sfondo</label>
+        <div class="qrcolor-row">
+          <input id="qrLightPick" type="color" value="#ffffff" aria-label="Scegli il colore dello sfondo">
+          <input id="qrLight" type="text" maxlength="7" autocomplete="off" spellcheck="false" placeholder="#FFFFFF">
+        </div>
+      </div>
+      <img id="qrPreview" class="qr-preview" alt="Anteprima del QR con i colori scelti">
+    </div>
+    <p id="qrColorMsg" class="hint" aria-live="polite"></p>
+    <div class="actions flush">
+      <button id="qrColorSave" class="small" disabled>Salva colori</button>
+      <button id="qrColorReset" class="ghost small" type="button">Nero e bianco</button>
+      <span id="qrColorState" class="state"></span>
+    </div>
+    <p class="hint">Scrivi i colori come codice, ad esempio #191919. Valgono per il QR sul biglietto e per i QR delle tappe della caccia al tesoro (rigenerati qui sotto con i nuovi colori: i codici dentro restano gli stessi, quelli già stampati continuano a funzionare). Perché il QR si legga bene, i quadratini devono essere molto più scuri dello sfondo.</p>
+  </fieldset>
+
+  <div class="passbox">
+    <label class="field" for="title">Titolo del quiz</label>
+    <input id="title" type="text" maxlength="60" autocomplete="off">
+    <p class="hint">Il titolo compare sul biglietto e nella scheda del browser.</p>
+    <label class="field" for="headline">Scritta grande della pagina iniziale (facoltativa)</label>
+    <input id="headline" type="text" maxlength="60" autocomplete="off">
+    <p class="hint">È la scritta nel riquadro grande in cima alla pagina iniziale; l'ultima parola è colorata di rosso. Se la lasci vuota è uguale al titolo. Esempio: Quanto ne sai sull'HIV?</p>
+    <span class="field" id="stickerLabel">Scritte del logo in alto a sinistra (facoltative)</span>
+    <div class="optrow">
+      <input id="sticker1" type="text" maxlength="12" autocomplete="off" aria-labelledby="stickerLabel" placeholder="QUIZ">
+      <input id="sticker2" type="text" maxlength="12" autocomplete="off" aria-labelledby="stickerLabel" placeholder="HIV">
+    </div>
+    <p class="hint">Le due scritte ad adesivo della grafica nuova, su tutte le pagine (massimo 12 caratteri l'una, sempre in maiuscolo). Se le lasci vuote tutte e due, sono la prima e l'ultima parola del titolo.</p>
+    <label class="field" for="subtitle">Sottotitolo (facoltativo)</label>
+    <textarea id="subtitle" maxlength="200" rows="2"></textarea>
+    <p class="hint" id="subtitleHint">È la frase sotto al titolo nella pagina iniziale. Se lo lasci vuoto il sito scrive da solo: «Con almeno 7 risposte giuste su 8 ricevi un codice personale, valido una sola volta.» Puoi scrivere {giuste} e {domande}: il sito li sostituisce con i numeri veri, così restano giusti anche se cambi le domande. Esempio: Una domanda alla volta. Con almeno {giuste} risposte giuste vinci il tuo biglietto.</p>
+  </div>
+
+  <div class="passbox">
+    <label class="field" for="pass">Risposte giuste necessarie per ottenere il codice</label>
+    <input id="pass" type="number" min="1" step="1">
+    <span id="passInfo"></span>
+  </div>
+
+  <div id="list"></div>
+  <button id="addq" class="ghost">Aggiungi domanda</button>
+
+  <div id="saveMsg" aria-live="polite" class="mt22"></div>
+  <div class="savebar">
+    <button id="save" disabled>Pubblica</button>
+    <button id="revert" class="ghost">Annulla modifiche</button>
+    <button id="logout" class="ghost">Esci</button>
+    <span id="state" class="state"></span>
+  </div>
+</section>
+
+<section id="hunt" hidden>
+  <h1 class="mt22">Caccia <em>al tesoro</em></h1>
+  <p class="lead">Facoltativa. Genera dei QR da stampare e
+    posizionare in giro: chi li trova (in qualsiasi ordine, non serve stamparli o scoprirli in sequenza) riceve il
+    biglietto solo dopo aver fatto il quiz E trovato tutte le tappe. Cambiare le domande del quiz non richiede
+    rifare questi QR: sono indipendenti. Puoi anche dividere le domande tra le tappe, invece di farle vedere
+    tutte insieme dopo la prima tappa trovata.</p>
+
+  <div class="passbox">
+    <label class="field" for="huntEnabled"><input type="checkbox" id="huntEnabled"> Attiva caccia al tesoro</label>
+    <button id="huntSave" class="ghost small">Salva</button>
+    <span id="huntState" class="state"></span>
+  </div>
+
+  <div class="passbox">
+    <label class="field" for="huntDistribute"><input type="checkbox" id="huntDistribute"> Dividi le domande tra le tappe (ogni QR ne mostra solo alcune, invece di tutto il quiz)</label>
+    <p class="hint">Si salva insieme al pulsante "Salva" qui sopra. Cambiarla non richiede rigenerare i QR: la divisione si aggiorna da sola.</p>
+  </div>
+
+  <div class="passbox">
+    <label class="field" for="huntCount">Numero di tappe da generare</label>
+    <input id="huntCount" type="number" min="1" max="20" step="1" value="5">
+    <button id="huntGenerate">Genera nuovi QR</button>
+    <p class="hint">Genera un nuovo insieme di QR: quelli già salvati o distribuiti in precedenza smettono di
+      funzionare da quel momento. Chi stava già cercando le tappe dovrà ripartire con i QR nuovi.</p>
+  </div>
+
+  <div id="huntMsg" aria-live="polite" class="mt18"></div>
+  <p id="huntHint" class="hint" hidden>Tieni premuto su un QR (da telefono) o fai tasto destro e "Salva immagine"
+    (da computer) per salvarlo come foto e poterlo poi stampare o condividere.</p>
+  <div id="huntGrid" class="hunt-grid"></div>
+</section>
+</main>
+<footer class="n-only n-credit">
+  <img src="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-dark="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-light="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo-rosso" draggable="false" alt="Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria">
+</footer>
+<script src="domande.js"></script>
+</body></html>

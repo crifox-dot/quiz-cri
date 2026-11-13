@@ -1,0 +1,440 @@
+/* =====================================================================================
+   GRAFICA NUOVA ("giocosa"), presa dal design fatto con Claude Design.
+   Vale solo quando <html> ha la classe "ui-nuova": la aggiunge theme.js in base alla scelta
+   fatta nel pannello domande (Grafica del sito). Senza quella classe resta la grafica
+   classica di style.css, identica a prima (gli elementi "n-only" li' non si vedono).
+   Modalita' scura = predefinita (vinaccia); modalita' chiara = classe "light" (rosso chiaro).
+   ===================================================================================== */
+
+/* --- caratteri, tutti ospitati sul sito (nessuna richiesta a Google) ---
+   Il design usa Bowlby One (titoli) e Fredoka (testo). Se i loro file sono nella cartella fonts/
+   vengono usati quelli; se mancano, il browser passa da solo al file successivo (Poppins, gia' incluso). */
+@font-face{font-family:"N Titoli";font-weight:400;font-display:swap;
+  src:local("Bowlby One"),local("BowlbyOne-Regular"),url(fonts/BowlbyOne-Regular.ttf) format("truetype"),url(fonts/poppins-700.woff) format("woff")}
+@font-face{font-family:"N Testo";font-weight:400;font-display:swap;
+  src:url(fonts/Fredoka.ttf) format("truetype"),url(fonts/poppins-400.woff) format("woff")}
+@font-face{font-family:"N Testo";font-weight:500;font-display:swap;
+  src:url(fonts/Fredoka.ttf) format("truetype"),url(fonts/poppins-500.woff) format("woff")}
+@font-face{font-family:"N Testo";font-weight:600 700;font-display:swap;
+  src:url(fonts/Fredoka.ttf) format("truetype"),url(fonts/poppins-700.woff) format("woff")}
+
+/* --- colori: modalita' scura (vinaccia) --- */
+html.ui-nuova{
+  --n-bg:#2A1215;        /* sfondo */
+  --n-surface:#3D1C21;   /* adesivi (riquadri, pulsanti) */
+  --n-band:#FFA59E;      /* fascia in alto durante le domande: rosso chiaro (diverso da barra e ombre) */
+  --n-band-ink:#2A1215;  /* testo e bordi sopra la fascia */
+  --n-field:#2A1215;     /* campi da compilare */
+  --n-ink:#FFE9E6;       /* testo */
+  --n-mute:#D9BFBC;      /* testo secondario */
+  --n-line:#FFE9E6;      /* bordi */
+  --n-shadow:#FF7B7B;    /* ombre nette */
+  --n-block:#FFE9E6;     /* blocchi pieni (titolo, risposte non scelte) */
+  --n-block-ink:#2A1215;
+  --n-head-shadow:#CC0000; /* ombra di "Quasi!" */
+  --n-red:#CC0000;       /* rosso del logo CRI */
+  --n-em:#CC0000;        /* ultima parola del titolo */
+  --n-track:#2A1215;     /* barra di avanzamento */
+  --n-fill:#FF4040;
+  --n-dot:#FFE9E6;--n-dot-line:#2A1215;--n-dot-shadow:#2A1215;
+  --n-ticket:#FFF6F5;--n-code:#2A1215;
+  --n-ok:#2BD46A;
+  --n-dirty:#FFD28A;
+  /* anche i colori della grafica classica, per le parti che non vengono ridisegnate qui */
+  --bg:var(--n-bg);--panel:var(--n-surface);--line:var(--n-line);--ink:var(--n-ink);--mute:var(--n-mute);
+  --red:var(--n-red);--red-hi:var(--n-red);--sel-bg:var(--n-surface);--ko-ink:#FFFFFF;--dirty-ink:var(--n-dirty);
+  --brand-red:var(--n-em);
+  --n-title:"N Titoli","Poppins",system-ui,sans-serif;
+}
+/* --- colori: modalita' chiara (rosso chiaro) --- */
+html.ui-nuova.light{
+  --n-bg:#FF7B7B;
+  --n-surface:#FFFFFF;
+  --n-band:#FFFFFF;
+  --n-band-ink:#1A1014;
+  --n-field:#FFFFFF;
+  --n-ink:#1A1014;
+  --n-mute:#3A2A2E;
+  --n-line:#1A1014;
+  --n-shadow:#1A1014;
+  --n-block:#1A1014;
+  --n-block-ink:#FFFFFF;
+  --n-head-shadow:#FFFFFF;
+  --n-em:#FF4040;        /* sul blocco nero il rosso del logo si leggerebbe poco */
+  --n-track:#FFE1DE;
+  --n-fill:#CC0000;
+  --n-dot:#FFFFFF;--n-dot-line:#1A1014;--n-dot-shadow:#1A1014;
+  --n-ticket:#FFFFFF;--n-code:#1A1014;
+  --n-dirty:#5A2E00;
+  --bg:var(--n-bg);--panel:var(--n-surface);--line:var(--n-line);--ink:var(--n-ink);--mute:var(--n-mute);
+  --sel-bg:var(--n-surface);--dirty-ink:var(--n-dirty);--brand-red:var(--n-em);
+}
+html.ui-nuova.a11y{--line:var(--n-line);--mute:var(--n-ink)}
+
+/* elementi che esistono solo nella grafica nuova */
+.n-only{display:none!important}
+
+html.ui-nuova body{font-family:"N Testo","Poppins",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-weight:400;
+  display:flex;flex-direction:column;overflow-x:clip}
+/* lo sfondo lo disegna <html>: cosi' la fascia delle domande (z-index -1) resta visibile sopra di esso */
+html.ui-nuova body{background:transparent}
+html.ui-nuova main{width:100%}
+html.ui-nuova.a11y body{font-weight:500}
+html.ui-nuova ::selection{background:var(--n-red);color:#fff}
+
+/* --- intestazione: logo "QUIZ / HIV" ad adesivo e pulsanti rotondi --- */
+html.ui-nuova .top{position:relative;width:100%;padding:22px 14px 0}
+html.ui-nuova .top > #logo{display:none}
+html.ui-nuova .n-sticker{display:inline-flex!important;align-items:flex-start;padding:6px 0 16px 2px;transform:rotate(-5deg);
+  font:400 26px/1.1 var(--n-title);letter-spacing:.02em}
+html.ui-nuova .n-sticker b{font-weight:400;display:block;white-space:nowrap}
+html.ui-nuova .n-sticker b:first-child{background:var(--n-block);color:var(--n-block-ink);border-radius:12px;padding:4px 14px 6px}
+html.ui-nuova .n-sticker b + b{position:relative;top:20px;margin-left:-16px;font-size:22px;background:var(--n-red);color:#fff;
+  border:3px solid var(--n-line);border-radius:10px;padding:2px 12px 4px;transform:rotate(9deg)}
+html.ui-nuova .topbtn{width:46px;height:46px;padding:0;border-radius:50%;background:var(--n-surface);color:var(--n-ink);
+  border:3px solid var(--n-line);box-shadow:3px 3px 0 var(--n-shadow);transition:transform .12s,box-shadow .12s}
+html.ui-nuova .topbtn svg{stroke-width:2.4}
+html.ui-nuova button.topbtn:hover:not(:disabled){background:var(--n-surface);border-color:var(--n-line);transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--n-shadow)}
+html.ui-nuova .topbtn[aria-pressed="true"]{background:var(--n-red);color:#fff;border-color:var(--n-line)}
+html.ui-nuova button.topbtn[aria-pressed="true"]:hover:not(:disabled){background:var(--n-red)}
+
+/* in fondo: il logo della Croce Rossa su una pillola */
+html.ui-nuova .n-credit{display:flex!important;justify-content:center;padding:18px 16px calc(30px + env(safe-area-inset-bottom,0px))}
+html.ui-nuova .n-credit img{display:block;height:52px;width:auto;max-width:100%;box-sizing:border-box;padding:8px 18px;
+  background:var(--n-surface);border:3px solid var(--n-line);border-radius:999px}
+html.ui-nuova body:has(#quiz:not([hidden])) .n-credit,html.ui-nuova body:has(.ticket.docked) .n-credit{display:none!important}
+
+/* --- titoli: un blocco pieno inclinato con ombra rossa --- */
+html.ui-nuova main h1{display:block;font:400 clamp(2.3rem,11vw,2.9rem)/1.02 var(--n-title);letter-spacing:0;text-align:left;
+  background:var(--n-block);color:var(--n-block-ink);border-radius:28px;padding:30px 22px 34px;margin:6px 0 30px;
+  transform:rotate(-2deg);box-shadow:7px 7px 0 var(--n-red)}
+html.ui-nuova main h1 em{font:inherit;font-style:normal;color:var(--n-em);letter-spacing:inherit}
+html.ui-nuova main h1.mt22{margin-top:44px}
+
+/* --- schermata iniziale: tutto centrato, come nel design --- */
+html.ui-nuova #start{display:flex;flex-direction:column;align-items:center;gap:26px;padding-top:30px;text-align:center}
+html.ui-nuova #start[hidden]{display:none}
+html.ui-nuova .titlewrap{position:relative;width:100%;transform:rotate(-2deg)}
+html.ui-nuova .titlewrap h1{margin:0;transform:none}
+html.ui-nuova .n-badge{display:block!important;position:absolute;right:-10px;top:-18px;background:var(--n-red);color:#fff;
+  border:3px solid var(--n-line);border-radius:999px;padding:4px 14px;font-weight:700;font-size:15px;line-height:1.35;transform:rotate(8deg)}
+html.ui-nuova .n-badge:empty{display:none!important}
+html.ui-nuova .gowrap{position:relative;margin-top:8px}
+html.ui-nuova .gowrap:has(#go[hidden]){display:none}
+html.ui-nuova .n-star{display:block!important;position:absolute;fill:var(--n-red);stroke:var(--n-line);stroke-width:3;stroke-linejoin:round;pointer-events:none}
+html.ui-nuova .n-star1{width:34px;height:34px;right:-16px;top:-18px}
+html.ui-nuova .n-star2{width:22px;height:22px;left:-14px;bottom:-10px;fill:var(--n-surface);stroke-width:4}
+html.ui-nuova #start .hint{margin:0;max-width:none;color:var(--n-ink);font-weight:500}
+
+/* --- testo introduttivo: un adesivo --- */
+html.ui-nuova .lead{color:var(--n-ink);font-weight:500;font-size:18px;line-height:1.35;max-width:none;background:var(--n-surface);
+  border:3px solid var(--n-line);border-radius:16px;padding:14px 18px;margin:0 0 28px;box-shadow:4px 4px 0 var(--n-shadow);transform:rotate(1.5deg)}
+html.ui-nuova #start .lead{width:100%;margin:0;text-align:center}
+html.ui-nuova .hint{color:var(--n-mute)}
+
+/* --- pulsanti: pillole "adesive" che si schiacciano quando le premi --- */
+html.ui-nuova button{font-family:inherit;font-weight:700;background:var(--n-surface);color:var(--n-ink);border:3px solid var(--n-line);
+  box-shadow:4px 4px 0 var(--n-shadow);padding:13px 26px;transition:transform .12s,box-shadow .12s,background-color .12s}
+html.ui-nuova button:hover:not(:disabled){background:var(--n-surface);transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--n-shadow)}
+html.ui-nuova button:active:not(:disabled){transform:translate(3px,3px);box-shadow:1px 1px 0 var(--n-shadow)}
+html.ui-nuova button:disabled{opacity:.45;box-shadow:none}
+html.ui-nuova button.ghost{background:transparent;color:var(--n-ink);border:3px solid var(--n-line);box-shadow:none}
+html.ui-nuova button.ghost:hover:not(:disabled){background:transparent;box-shadow:3px 3px 0 var(--n-shadow)}
+html.ui-nuova button.danger{background:var(--n-red);color:#fff;border-color:var(--n-line)}
+html.ui-nuova button.danger:hover:not(:disabled){background:var(--n-red)}
+html.ui-nuova button.small{padding:7px 14px;box-shadow:3px 3px 0 var(--n-shadow)}
+html.ui-nuova button.ghost.small{box-shadow:none}
+html.ui-nuova #check,html.ui-nuova #enter,html.ui-nuova #statusCheck{font-size:1.12rem;padding:15px 30px;box-shadow:5px 5px 0 var(--n-shadow)}
+html.ui-nuova button:focus-visible,html.ui-nuova input:focus-visible,html.ui-nuova textarea:focus-visible{outline:3px solid var(--n-ink);outline-offset:3px}
+/* pulsanti grandi con l'icona (freccia, riprova), disegnata col colore del testo */
+html.ui-nuova #go,html.ui-nuova #next,html.ui-nuova #result button{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+html.ui-nuova #go,html.ui-nuova #result button{min-width:min(250px,100%);min-height:66px;padding:0 28px;font-size:22px;box-shadow:5px 5px 0 var(--n-shadow)}
+html.ui-nuova #next{min-height:58px;padding:0 30px;font-size:20px;margin-left:auto}
+html.ui-nuova #go::after,html.ui-nuova #next::after,html.ui-nuova #result button.n-retry::before,html.ui-nuova #back::before{
+  content:"";flex:none;width:24px;height:24px;background:currentColor;
+  -webkit-mask:url(icone/freccia.svg) center/contain no-repeat;mask:url(icone/freccia.svg) center/contain no-repeat}
+html.ui-nuova #next::after{width:22px;height:22px}
+html.ui-nuova #result button.n-retry::before{-webkit-mask-image:url(icone/riprova.svg);mask-image:url(icone/riprova.svg)}
+/* "Indietro": tondo con la sola freccia (il testo resta per chi usa un lettore di schermo) */
+html.ui-nuova #back{width:58px;height:58px;padding:0;flex:none;border-radius:50%;font-size:0;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--n-surface);box-shadow:4px 4px 0 var(--n-shadow)}
+html.ui-nuova #back[hidden]{display:none}
+html.ui-nuova #back::before{-webkit-mask-image:url(icone/indietro.svg);mask-image:url(icone/indietro.svg)}
+html.ui-nuova button.ghost#back:hover:not(:disabled){background:var(--n-surface);box-shadow:5px 5px 0 var(--n-shadow)}
+
+/* --- domande: fascia in alto (logo, barra, domanda) che finisce con un bordo a onde --- */
+html.ui-nuova body:has(#quiz:not([hidden])) main{padding-top:0}
+html.ui-nuova body:has(#quiz:not([hidden])) .top,html.ui-nuova #quiz .qbar,html.ui-nuova #quizNote,html.ui-nuova #quiz legend.qtext{position:relative}
+/* il colore della fascia si allarga fino ai bordi dello schermo */
+html.ui-nuova body:has(#quiz:not([hidden])) .top::before,html.ui-nuova #quiz .qbar::before,html.ui-nuova #quizNote::before,html.ui-nuova #quiz legend.qtext::before{
+  content:"";position:absolute;top:0;bottom:-1px;left:calc(50% - 50vw);width:100vw;background:var(--n-band);z-index:-1}
+/* logo e pulsanti restano sopra la fascia (anche mentre scende); sulla fascia bordi e ombre sono scuri */
+html.ui-nuova body:has(#quiz:not([hidden])) .top{z-index:2}
+html.ui-nuova body:has(#quiz:not([hidden])) .topbtn{border-color:var(--n-band-ink);box-shadow:3px 3px 0 var(--n-band-ink)}
+html.ui-nuova body:has(#quiz:not([hidden])) .n-sticker b + b{border-color:var(--n-band-ink)}
+html.ui-nuova #quizNote .msg{border-color:var(--n-band-ink);box-shadow:4px 4px 0 var(--n-band-ink)}
+html.ui-nuova #quiz .qbar{display:flex;align-items:center;gap:12px;padding-top:26px}
+html.ui-nuova .meta{order:2;margin:0;color:var(--n-band-ink);font-weight:700;font-size:16px;white-space:nowrap}
+html.ui-nuova .meta .n-hide{display:none}
+html.ui-nuova .progress{position:relative;flex:1;height:16px;margin:0 0 0 14px;overflow:visible;background:var(--n-track);
+  border:3px solid var(--n-band-ink);border-radius:999px}
+html.ui-nuova .progress i{background:var(--n-fill);border-radius:999px;transition:width .75s cubic-bezier(.22,1.3,.36,1) .12s}
+/* il pallino si sposta per primo, con un piccolo rimbalzo, e la barra lo segue: sembra trascinato */
+html.ui-nuova .n-dot{display:block!important;position:absolute;left:0;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;box-sizing:border-box;
+  background:var(--n-dot);border:3px solid var(--n-dot-line);border-radius:50%;box-shadow:2px 3px 0 var(--n-dot-shadow);
+  transition:left .55s cubic-bezier(.34,1.45,.64,1)}
+html.ui-nuova #quizNote{padding-top:18px}
+html.ui-nuova #quizNote[hidden]{display:none}
+html.ui-nuova #quizNote .msg{margin:0}
+html.ui-nuova #quiz legend.qtext{float:left;width:100%;box-sizing:border-box;text-align:center;font-weight:600;font-size:clamp(1.35rem,6.4vw,1.6rem);
+  line-height:1.25;color:var(--n-band-ink);background:none;border:0;box-shadow:none;padding:28px 0 26px;margin:0}
+html.ui-nuova #quiz legend.qtext::after{content:"";position:absolute;top:100%;left:calc(50% - 50vw);width:100vw;height:18px;margin-top:-1px;
+  background:radial-gradient(circle at 15px 3px,var(--n-band) 14.6px,transparent 15.4px) 0 0/30px 18px repeat-x,
+             linear-gradient(var(--n-band),var(--n-band)) 0 0/100% 3px no-repeat}
+
+/* risposte: blocchi pieni leggermente storti, testo centrato */
+html.ui-nuova .opts{clear:both;padding:44px 0 0}
+html.ui-nuova .opts label{--tilt:0deg;display:flex;align-items:center;justify-content:center;gap:10px;min-height:62px;box-sizing:border-box;
+  text-align:center;font-size:19px;line-height:1.3;font-weight:600;background:var(--n-block);color:var(--n-block-ink);
+  border:3px solid var(--n-line);border-radius:18px;padding:12px 18px;margin:0 0 16px;transform:rotate(var(--tilt));
+  transition:transform .2s ease,background-color .2s ease,box-shadow .2s ease}
+html.ui-nuova .opts label:nth-child(4n+1){--tilt:-1.2deg}
+html.ui-nuova .opts label:nth-child(4n+2){--tilt:.9deg}
+html.ui-nuova .opts label:nth-child(4n+3){--tilt:-1.3deg}
+html.ui-nuova .opts label:nth-child(4n+4){--tilt:1.1deg}
+html.ui-nuova .opts label:hover{border-color:var(--n-line);transform:rotate(var(--tilt)) translateY(-2px)}
+/* il cerchietto non si vede finche' la risposta non e' scelta */
+/* (resta comunque cliccabile: copre tutto il riquadro, trasparente) */
+html.ui-nuova .opts input{appearance:none;-webkit-appearance:none;position:absolute;inset:0;width:100%;height:100%;margin:0;border:0;
+  border-radius:inherit;color:inherit;background:transparent;opacity:0;cursor:pointer}
+/* risposta scelta: NEUTRA (adesivo chiaro con il pallino), non dice se e' giusta o sbagliata */
+html.ui-nuova .opts input:checked{position:static;flex:none;width:22px;height:22px;opacity:1;border:3px solid currentColor;border-radius:50%;
+  background:radial-gradient(circle,currentColor 0 4.5px,transparent 5.2px)}
+html.ui-nuova .opts label:has(input:checked){background:var(--n-surface);color:var(--n-ink);border-color:var(--n-line);
+  font-weight:700;box-shadow:5px 5px 0 var(--n-shadow);transform:rotate(calc(var(--tilt) * 1.6)) scale(1.03)}
+html.ui-nuova .opts label:has(input:focus-visible){outline:3px solid var(--n-ink);outline-offset:4px}
+/* domande sparse: risposta gia' provata e sbagliata, rossa con la X (non si puo' riscegliere) */
+html.ui-nuova .opts label.was-wrong{background:var(--n-red);color:#fff;border-color:var(--n-line);cursor:not-allowed}
+html.ui-nuova .opts label.was-wrong::before{content:"";flex:none;width:22px;height:22px;background:currentColor;
+  -webkit-mask:url(icone/sbagliata.svg) center/contain no-repeat;mask:url(icone/sbagliata.svg) center/contain no-repeat}
+html.ui-nuova .opts label.was-wrong > span:not(.vh)::after{content:none}
+html.ui-nuova .opts label.was-wrong input{cursor:not-allowed}
+html.ui-nuova .opts label.was-wrong:hover{transform:rotate(var(--tilt))}
+html.ui-nuova .actions{margin-top:34px;flex-wrap:wrap;justify-content:space-between}
+/* Avanti e Indietro durante il quiz: sempre nello stesso punto, in fondo allo schermo, vicino ai bordi */
+html.ui-nuova #quiz{padding-bottom:96px}
+html.ui-nuova #quiz .actions{position:fixed;left:0;right:0;bottom:0;z-index:30;box-sizing:border-box;max-width:720px;margin:0 auto;
+  flex-wrap:nowrap;padding:0 14px calc(18px + env(safe-area-inset-bottom,0px));pointer-events:none}
+html.ui-nuova #quiz .actions button{pointer-events:auto}
+html.ui-nuova #err .msg{margin-top:22px}
+
+/* --- messaggi: verde se va bene, rosso se va male (sempre con il testo che lo dice) --- */
+html.ui-nuova .msg{background:var(--n-surface);color:var(--n-ink);border:3px solid var(--n-line);border-radius:16px;
+  padding:14px 18px;margin:0 0 22px;font-weight:600;box-shadow:4px 4px 0 var(--n-shadow)}
+html.ui-nuova .msg.ok{background:var(--n-ok);color:#1A1014;border-color:var(--n-line)}
+html.ui-nuova .msg.ko{background:var(--n-red);color:#FFFFFF;border-color:var(--n-line)}
+
+/* --- risultato: "Quasi!" col cerchio del punteggio, oppure "Ce l'hai fatta!" col biglietto --- */
+html.ui-nuova #result{display:flex;flex-direction:column;align-items:center;gap:26px;padding-top:24px;text-align:center}
+html.ui-nuova #result[hidden]{display:none}
+html.ui-nuova #result > .msg,html.ui-nuova #result > .hint{width:100%;box-sizing:border-box;margin:0;background:var(--n-surface);color:var(--n-ink);
+  border:3px solid var(--n-line);border-radius:16px;padding:14px 18px;font-size:18px;font-weight:500;line-height:1.35;
+  box-shadow:4px 4px 0 var(--n-shadow);transform:rotate(-1.5deg);max-width:none}
+html.ui-nuova #result > .hint{font-size:16px;padding:12px 16px;transform:rotate(-1deg)}
+html.ui-nuova .n-head{display:inline-block!important;margin:0;background:var(--n-block);color:var(--n-block-ink);border-radius:18px;
+  padding:8px 26px 12px;font:400 clamp(2.3rem,11vw,2.9rem)/1.1 var(--n-title);transform:rotate(-4deg);box-shadow:6px 6px 0 var(--n-head-shadow)}
+html.ui-nuova .n-head-red{background:var(--n-red);color:#fff;border:3px solid var(--n-line);border-radius:16px;padding:6px 22px 10px;
+  font-size:clamp(1.8rem,8.6vw,2.15rem);transform:rotate(-3deg);box-shadow:5px 5px 0 var(--n-shadow)}
+html.ui-nuova .n-score{display:flex!important;position:relative;flex-direction:column;align-items:center;justify-content:center;
+  width:190px;height:190px;box-sizing:border-box;background:var(--n-surface);border:4px solid var(--n-line);border-radius:50%;
+  box-shadow:6px 6px 0 var(--n-shadow);transform:rotate(3deg)}
+html.ui-nuova .n-score b{font:400 72px/1 var(--n-title)}
+html.ui-nuova .n-score span{font-size:20px;font-weight:600}
+html.ui-nuova .n-score i{position:absolute;right:-22px;bottom:6px;font-style:normal;background:var(--n-red);color:#fff;border:3px solid var(--n-line);
+  border-radius:999px;padding:4px 14px;font-weight:700;font-size:15px;white-space:nowrap;transform:rotate(-10deg)}
+
+/* --- biglietto: rosso sopra, perforazione con le tacche, codice in una pillola scura --- */
+html.ui-nuova .ticket{width:100%;max-width:340px;overflow:visible;background:none;border:0;border-radius:26px;box-shadow:none;
+  rotate:1.5deg;filter:drop-shadow(7px 7px 0 var(--n-shadow))}
+html.ui-nuova .ticket.docked{width:auto}
+html.ui-nuova .ticket-top{background:var(--n-red);border:3px solid var(--n-line);border-bottom:0;border-radius:26px 26px 0 0;padding:20px 20px 22px}
+html.ui-nuova .ticket-logo{height:104px;margin-bottom:12px}
+html.ui-nuova .ticket-event{font:400 22px/1.1 var(--n-title)}
+html.ui-nuova .ticket-perf{height:26px;border:0;border-left:3px solid var(--n-line);border-right:3px solid var(--n-line);background:var(--n-ticket)}
+html.ui-nuova .ticket-perf::before{content:"";position:absolute;left:22px;right:22px;top:11px;border-top:4px dotted var(--n-code)}
+html.ui-nuova .ticket-perf .notch{width:28px;height:28px;box-sizing:border-box;background:var(--n-bg);border:3px solid var(--n-line)}
+html.ui-nuova .ticket-perf .notch-l{left:-16px}
+html.ui-nuova .ticket-perf .notch-r{right:-16px}
+html.ui-nuova .ticket-bottom{background:var(--n-ticket);border:3px solid var(--n-line);border-top:0;border-radius:0 0 26px 26px;padding:10px 20px 24px}
+html.ui-nuova .ticket-code{margin-top:14px;font:400 28px/1.1 var(--n-title);letter-spacing:2px;background:var(--n-code);color:#FFFFFF;
+  border-radius:12px;padding:6px 18px 8px;transform:rotate(-1.5deg)}
+html.ui-nuova .ticket.locked .ticket-code{color:#FFFFFF}
+html.ui-nuova .ticket-note{color:#5A4A4E;font-weight:500}
+
+/* --- pannelli admin e domande: campi, riquadri, barra di salvataggio --- */
+html.ui-nuova label.field,html.ui-nuova legend.field{font-weight:700}
+html.ui-nuova input[type=password],html.ui-nuova input[type=text],html.ui-nuova input[type=number],html.ui-nuova textarea{
+  font-family:inherit;font-weight:500;color:var(--n-ink);background:var(--n-field);border:3px solid var(--n-line);border-radius:14px}
+html.ui-nuova input[type=password]:focus,html.ui-nuova input[type=text]:focus,html.ui-nuova input[type=number]:focus,html.ui-nuova textarea:focus{
+  border-color:var(--n-line);box-shadow:4px 4px 0 var(--n-shadow)}
+html.ui-nuova input[type=password],html.ui-nuova #code{box-shadow:4px 4px 0 var(--n-shadow)}
+html.ui-nuova #code{font:400 1.4rem/1.2 var(--n-title);letter-spacing:.08em;text-align:center}
+html.ui-nuova .passbox,html.ui-nuova .qcard{background:var(--n-surface);border:3px solid var(--n-line);border-radius:18px;
+  box-shadow:5px 5px 0 var(--n-shadow)}
+html.ui-nuova .optrow input[type=text]{background:var(--n-field)}
+html.ui-nuova .optrow input[type=radio],html.ui-nuova label.field input[type=checkbox],html.ui-nuova .choice input[type=radio]{accent-color:var(--n-red)}
+html.ui-nuova .savebar{background:var(--n-bg);border-top:3px solid var(--n-line)}
+html.ui-nuova .state{color:var(--n-ink);font-weight:500}
+html.ui-nuova .state.dirty{color:var(--n-dirty);font-weight:700}
+html.ui-nuova.light .passbox .state.dirty,html.ui-nuova.light .qcard .state.dirty{color:#7A3A00}
+html.ui-nuova .hunt-item{border:3px solid #1A1014;border-radius:16px;box-shadow:4px 4px 0 var(--n-shadow)}
+
+/* scelta della grafica nel pannello domande (vale per entrambe le grafiche) */
+fieldset.passbox{min-width:0}
+/* la legenda di un fieldset si disegna sopra il bordo: cosi' invece sta dentro il riquadro, come le altre etichette */
+legend.field{float:left;width:100%;padding:0;margin-bottom:10px;font-weight:600}
+legend.field + *{clear:both}
+.choice{display:flex;flex-wrap:wrap;gap:10px 22px;margin-bottom:8px}
+.choice label{display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600}
+.choice input[type=radio]{width:22px;height:22px;margin:0;accent-color:var(--red)}
+
+/* alto contrasto: niente rotazioni, tutto dritto e piu' facile da leggere */
+html.ui-nuova.a11y main h1,html.ui-nuova.a11y .titlewrap,html.ui-nuova.a11y .lead,html.ui-nuova.a11y .n-sticker,html.ui-nuova.a11y .n-sticker b,
+html.ui-nuova.a11y .n-badge,html.ui-nuova.a11y .n-head,html.ui-nuova.a11y .n-score,html.ui-nuova.a11y .n-score i,html.ui-nuova.a11y .ticket-code,
+html.ui-nuova.a11y #result > .msg,html.ui-nuova.a11y #result > .hint{transform:none}
+html.ui-nuova.a11y .ticket{rotate:none}
+html.ui-nuova.a11y .opts label{--tilt:0deg}
+html.ui-nuova.a11y .opts label:has(input:checked){transform:none}
+
+@media (max-width:420px){
+  html.ui-nuova main{padding-left:24px;padding-right:24px}
+}
+
+/* ============================== ANIMAZIONI ==============================
+   Solo se il dispositivo non chiede "meno movimento". Usano translate/scale (non transform),
+   cosi' non toccano le inclinazioni degli adesivi. */
+html.ui-nuova #start.pending > *{opacity:0}
+@media (prefers-reduced-motion:no-preference){
+  /* "nuvola": alla prima scansione di un QR gli elementi della schermata iniziale compaiono gonfiandosi, da sfocati */
+  html.ui-nuova #start.cloud > *{animation:nNuvola .62s cubic-bezier(.22,1.2,.36,1) both}
+  html.ui-nuova #start.cloud > :nth-child(2){animation-delay:.12s}
+  html.ui-nuova #start.cloud > :nth-child(3){animation-delay:.24s}
+  html.ui-nuova #start.cloud > :nth-child(n+4){animation-delay:.36s}
+  @keyframes nNuvola{0%{opacity:0;scale:.5;filter:blur(16px)}55%{opacity:1;scale:1.07;filter:blur(0)}100%{opacity:1;scale:1;filter:blur(0)}}
+
+  /* inizio del quiz: titolo, sottotitolo e pulsante svaniscono uno dopo l'altro */
+  html.ui-nuova #start.leaving{pointer-events:none;z-index:5}
+  html.ui-nuova #start.leaving > *{animation:nSvanisce .3s ease-in both}
+  html.ui-nuova #start.leaving > :nth-child(2){animation-delay:.05s}
+  html.ui-nuova #start.leaving > :nth-child(n+3){animation-delay:.1s}
+  @keyframes nSvanisce{to{opacity:0;scale:.72;translate:0 -16px;filter:blur(6px)}}
+
+  /* la fascia delle domande scende come una tenda e rimbalza una volta, di poco */
+  html.ui-nuova.quiz-enter body:has(#quiz:not([hidden])) .top::before,
+  html.ui-nuova.quiz-enter #quiz .qbar,html.ui-nuova.quiz-enter #quizNote,html.ui-nuova.quiz-enter #quiz legend.qtext{
+    animation:nTenda .78s .28s both}
+  @keyframes nTenda{
+    0%{translate:0 calc(-1 * var(--band-h,60vh));animation-timing-function:cubic-bezier(.45,0,.85,.55)}
+    64%{translate:0 0;animation-timing-function:ease-out}
+    82%{translate:0 -13px;animation-timing-function:ease-in}
+    100%{translate:0 0}}
+  /* le risposte compaiono una dopo l'altra, a ogni domanda: da piccole, storte e trasparenti si raddrizzano
+     (come nel video di riferimento). All'inizio del quiz aspettano che la tenda sia scesa. */
+  html.ui-nuova #quiz .opts label{animation:nRisposta .44s cubic-bezier(.3,1.35,.5,1) both}
+  html.ui-nuova #quiz .opts label:nth-child(2){animation-delay:.09s}
+  html.ui-nuova #quiz .opts label:nth-child(3){animation-delay:.18s}
+  html.ui-nuova #quiz .opts label:nth-child(4){animation-delay:.27s}
+  html.ui-nuova #quiz .opts label:nth-child(n+5){animation-delay:.36s}
+  html.ui-nuova #quiz.enter .opts label{animation-delay:.72s}
+  html.ui-nuova #quiz.enter .opts label:nth-child(2){animation-delay:.81s}
+  html.ui-nuova #quiz.enter .opts label:nth-child(3){animation-delay:.9s}
+  html.ui-nuova #quiz.enter .opts label:nth-child(4){animation-delay:.99s}
+  html.ui-nuova #quiz.enter .opts label:nth-child(n+5){animation-delay:1.08s}
+  @keyframes nRisposta{0%{opacity:0;scale:.68;rotate:6deg;translate:14px 20px}55%{opacity:1}100%{opacity:1;scale:1;rotate:0deg;translate:0 0}}
+
+  /* risposta appena scelta: si schiaccia, sobbalza storta e torna a posto, con due stelline che scoppiano */
+  html.ui-nuova #quiz .opts label.picked{animation:nScelta .5s cubic-bezier(.3,1.3,.5,1) both;animation-delay:0s}
+  @keyframes nScelta{0%{scale:1;rotate:0deg}22%{scale:.95 .86;rotate:-3.5deg}52%{scale:1.07 1.1;rotate:2.6deg}76%{scale:.99;rotate:-1deg}100%{scale:1;rotate:0deg}}
+  html.ui-nuova #quiz .opts label.picked::before,html.ui-nuova #quiz .opts label.picked::after{content:"";position:absolute;width:26px;height:26px;
+    background:#fff;-webkit-mask:url(icone/stella.svg) center/contain no-repeat;mask:url(icone/stella.svg) center/contain no-repeat;
+    pointer-events:none;animation:nStella .55s .08s ease-out both}
+  html.ui-nuova #quiz .opts label.picked::before{left:-8px;top:-14px;--sx:-16px;--sy:-14px}
+  html.ui-nuova #quiz .opts label.picked::after{right:-6px;bottom:-12px;width:20px;height:20px;--sx:14px;--sy:12px;animation-delay:.16s}
+  @keyframes nStella{0%{opacity:0;scale:.2;rotate:-40deg;translate:0 0}40%{opacity:1;scale:1.15}100%{opacity:0;scale:.5;rotate:50deg;translate:var(--sx) var(--sy)}}
+
+  /* fine del quiz: le risposte svaniscono, i pulsanti scendono, la fascia risale come una tenda */
+  html.ui-nuova #quiz.leaving .opts label{animation:nSvanisce .26s ease-in both;animation-delay:0s}
+  html.ui-nuova #quiz.leaving .opts label:nth-child(2){animation-delay:.04s}
+  html.ui-nuova #quiz.leaving .opts label:nth-child(3){animation-delay:.08s}
+  html.ui-nuova #quiz.leaving .opts label:nth-child(n+4){animation-delay:.12s}
+  html.ui-nuova #quiz.leaving .actions{animation:nScende .3s ease-in both}
+  @keyframes nScende{to{translate:0 110px}}
+  html.ui-nuova.quiz-leave body:has(#quiz:not([hidden])) .top::before,
+  html.ui-nuova.quiz-leave #quiz .qbar,html.ui-nuova.quiz-leave #quizNote,html.ui-nuova.quiz-leave #quiz legend.qtext{
+    animation:nTendaSu .36s .14s cubic-bezier(.5,0,.9,.5) both}
+  @keyframes nTendaSu{to{translate:0 calc(-1 * var(--band-h,60vh))}}
+  /* ...e il risultato compare un elemento dopo l'altro, come la schermata iniziale */
+  html.ui-nuova #result.arrive > :not(.ticket){animation:nNuvola .62s cubic-bezier(.22,1.2,.36,1) both}
+  html.ui-nuova #result.arrive > :nth-child(2):not(.ticket){animation-delay:.12s}
+  html.ui-nuova #result.arrive > :nth-child(3):not(.ticket){animation-delay:.24s}
+  html.ui-nuova #result.arrive > :nth-child(n+4):not(.ticket){animation-delay:.36s}
+  html.ui-nuova #quiz.enter .actions{animation:nSale .4s .95s both}
+  @keyframes nSale{from{translate:0 110px}}
+}
+
+/* --- manutenzione e colori dei QR (pannello domande) --- */
+html.ui-nuova .maint{text-align:left}
+html.ui-nuova .maint-state{color:var(--n-ink)}
+html.ui-nuova .maint-state::before{background:var(--n-ok);border-color:var(--n-line)}
+html.ui-nuova .maint-state.on::before{background:var(--n-red)}
+html.ui-nuova .qrcolor-row input[type=color]{border:3px solid var(--n-line);border-radius:14px;background:var(--n-field);box-shadow:3px 3px 0 var(--n-shadow)}
+html.ui-nuova .qrcolor-row input[type=text]{background:var(--n-field)}
+html.ui-nuova .qr-preview{border:3px solid var(--n-line);border-radius:14px;box-shadow:4px 4px 0 var(--n-shadow)}
+html.ui-nuova .qrcolor-row input.bad{border-color:var(--n-red);box-shadow:4px 4px 0 var(--n-red)}
+html.ui-nuova .usage-row{gap:12px;margin:18px 0 6px}
+html.ui-nuova .usage .progress{height:16px;margin:0 6px 0 20px;border-color:var(--n-line)}
+html.ui-nuova .usage .n-dot{width:34px;height:34px;margin:-17px 0 0 -17px;border-color:var(--n-line);box-shadow:2px 3px 0 var(--n-shadow)}
+html.ui-nuova .usage-count{font:400 1.05rem/1 var(--n-title)}
+html.ui-nuova .usage.high .progress i{background:var(--n-dirty)}
+
+/* --- modalita' classifica --- */
+html.ui-nuova{--flame:#FFB020}
+html.ui-nuova.light{--flame:#C2410C}
+html.ui-nuova .nickbox{width:100%;max-width:none;margin:0;text-align:left}
+html.ui-nuova .nickbox .field{color:var(--n-ink)}
+html.ui-nuova .nickbox .hint{color:var(--n-ink);font-weight:500}
+html.ui-nuova .nickbox .hint.ko{color:var(--n-ink);font-weight:700;background:var(--n-red);color:#fff;border:3px solid var(--n-line);border-radius:14px;padding:8px 12px}
+html.ui-nuova .nickbox input.bad{border-color:var(--n-red);box-shadow:4px 4px 0 var(--n-red)}
+html.ui-nuova .nickas{margin:0;color:var(--n-ink)}
+html.ui-nuova .boardbtn{margin-top:0}
+html.ui-nuova #result > .xp,html.ui-nuova #result > .wrong,html.ui-nuova #result > .board{width:100%;box-sizing:border-box;margin:0;
+  background:var(--n-surface);color:var(--n-ink);border:3px solid var(--n-line);border-radius:16px;box-shadow:4px 4px 0 var(--n-shadow)}
+html.ui-nuova #result > .xp{padding:14px 18px;transform:rotate(1deg)}
+html.ui-nuova .xp-num b{font:400 60px/1 var(--n-title)}
+html.ui-nuova .xp-num span{color:var(--n-ink);font-weight:600}
+html.ui-nuova .wrong h2,html.ui-nuova .board h2{font:400 1.25rem/1.2 var(--n-title)}
+html.ui-nuova .wrong li::marker{color:var(--n-red)}
+html.ui-nuova .board li{border-bottom:2px solid var(--n-line)}
+html.ui-nuova .board li:last-child,html.ui-nuova .board li.gap{border-bottom:0}
+html.ui-nuova .board li.me{background:var(--n-block);color:var(--n-block-ink);border-radius:12px;border-bottom-color:transparent}
+html.ui-nuova .board li.me .pos{color:inherit}
+html.ui-nuova .board .pos,html.ui-nuova .board .hint{color:var(--n-mute)}
+html.ui-nuova .board .pts{font:400 1.1rem/1 var(--n-title)}
+html.ui-nuova.a11y #result > .xp{transform:none}
+html.ui-nuova #result .board .del{min-width:0;min-height:0;padding:6px 12px;font-size:.85rem;box-shadow:none}
+html.ui-nuova #adminBoard{margin:0 0 18px;background:var(--n-surface);color:var(--n-ink);border:3px solid var(--n-line);border-radius:16px;box-shadow:4px 4px 0 var(--n-shadow)}
+html.ui-nuova #adminBoard h2 + ol + h2,html.ui-nuova #adminBoard .hint + h2{margin-top:18px}
+html.ui-nuova #adminBoard .del{min-width:0;min-height:0;padding:5px 10px;font-size:.78rem;border-width:2px;box-shadow:none}
+
+/* --- timer delle domande: nella riga dei pulsanti in fondo, al posto di Indietro --- */
+html.ui-nuova #quiz .timer{--t-col:#2BD46A;--t-ink:var(--n-line);height:58px;flex-basis:58px;min-width:58px;max-width:none;margin-right:14px;padding:5px 16px 5px 6px;
+  border:3px solid var(--n-line);background:var(--n-surface);box-shadow:4px 4px 0 var(--n-shadow);pointer-events:auto}
+html.ui-nuova #quiz .timer.yellow{--t-col:#FFD21F}
+html.ui-nuova #quiz .timer.red{--t-col:#FF4040}
+/* tempo scaduto: resta solo la clessidra in un pallino, come i pulsanti del tema in alto */
+html.ui-nuova #quiz .timer.over{--t-col:var(--n-mute);padding-right:6px}
+html.ui-nuova .timer .glass{width:40px;height:40px}
+html.ui-nuova .timer .glass .g-body{fill:var(--n-field)}
+html.ui-nuova .timer .tbar{height:16px;border:3px solid var(--n-line);background:var(--n-field)}
+html.ui-nuova .timer.over .tbar{border-width:0}
+html.ui-nuova .nwbox{border:3px solid var(--n-line);border-radius:14px;background:var(--n-field)}

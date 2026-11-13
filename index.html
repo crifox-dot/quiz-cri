@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: https://steep-haze-2da0.cloudflare-vbmev.workers.dev; connect-src https://steep-haze-2da0.cloudflare-vbmev.workers.dev; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#16120f">
+<title>Quiz · CRI Francavilla Fontana - Oria</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="nuova.css">
+<script src="qrcode.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="n-only n-sticker" aria-hidden="true"><b id="nWord1">QUIZ</b><b id="nWord2">HIV</b></div>
+  <img id="logo" src="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-dark="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-light="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo-rosso" draggable="false" alt="Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria">
+  <div class="topbtns">
+    <button id="btnA11y" class="topbtn" type="button" aria-pressed="false" aria-label="Alto contrasto e testo più spazioso" title="Alto contrasto">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="10"></circle>
+        <circle cx="12" cy="7" r="1.6" fill="currentColor" stroke="none"></circle>
+        <path d="M6.3 10.1c1.7.9 3.7 1.4 5.7 1.4s4-.5 5.7-1.4"></path>
+        <path d="M12 11.5v3.2l-2.6 4.6M12 14.7l2.6 4.6"></path>
+      </svg>
+    </button>
+    <button id="btnLight" class="topbtn" type="button" aria-pressed="false" aria-label="Modalità chiara" title="Modalità chiara">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="4.2"></circle>
+        <path d="M12 2.5v2.3M12 19.2v2.3M21.5 12h-2.3M4.8 12H2.5M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6M18.4 18.4l-1.6-1.6M7.2 7.2 5.6 5.6"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+<main>
+
+<section id="start">
+  <div class="titlewrap">
+    <h1 id="title"></h1>
+    <span class="n-only n-badge" id="nBadge" aria-hidden="true"></span>
+  </div>
+  <p class="lead" id="lead">Rispondi alle domande, una alla volta, e ricevi un codice personale valido una sola volta.</p>
+  <div id="nickBox" class="nickbox" hidden>
+    <label class="field" for="nick">Il tuo nickname</label>
+    <input id="nick" type="text" maxlength="16" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Solo lettere">
+    <p id="nickMsg" class="hint" aria-live="polite">Da 3 a 16 lettere, senza numeri né spazi. Comparirà in classifica: non usare il tuo vero nome.</p>
+  </div>
+  <p id="nickAs" class="hint nickas" hidden></p>
+  <div class="gowrap">
+    <button id="go" disabled>Inizia il quiz</button>
+    <svg class="n-only n-star n-star1" viewBox="0 0 34 34" aria-hidden="true" focusable="false"><path d="M17 2l4 11 11 4-11 4-4 11-4-11-11-4 11-4z"></path></svg>
+    <svg class="n-only n-star n-star2" viewBox="0 0 34 34" aria-hidden="true" focusable="false"><path d="M17 2l4 11 11 4-11 4-4 11-4-11-11-4 11-4z"></path></svg>
+  </div>
+  <button id="boardBtn" class="ghost boardbtn" type="button" hidden>Classifica</button>
+  <p id="loadMsg" class="hint" aria-live="polite">Caricamento delle domande…</p>
+  <p id="huntNote" class="hint" aria-live="polite" hidden></p>
+</section>
+
+<section id="quiz" hidden>
+  <div class="qbar">
+    <div class="meta"><span id="count"></span></div>
+    <div class="progress"><i id="bar"></i><b class="n-only n-dot" id="dot"></b></div>
+  </div>
+  <div id="quizNote" aria-live="polite" hidden></div>
+  <fieldset class="plain">
+    <legend class="qtext" id="qtext"></legend>
+    <div class="opts" id="opts"></div>
+  </fieldset>
+  <div class="actions">
+    <button id="back" class="ghost" hidden>Indietro</button>
+    <!-- Timer (modalita' classifica, se acceso nel pannello domande): sta al posto di Indietro, che col timer non c'e'.
+         Una clessidra (ferma con la sabbia in basso, poi si gira e la sabbia scende) e una barra che si svuota. -->
+    <div id="timer" class="timer" hidden>
+      <svg class="glass" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <defs><clipPath id="hgIn"><path d="M15 9H33V14.500C33 20 26.500 22 26.500 24S33 28 33 33.500V39H15V33.500C15 28 21.500 26 21.500 24S15 20 15 14.500Z"></path></clipPath></defs>
+        <path class="g-body" d="M15 9H33V14.500C33 20 26.500 22 26.500 24S33 28 33 33.500V39H15V33.500C15 28 21.500 26 21.500 24S15 20 15 14.500Z"></path>
+        <g clip-path="url(#hgIn)">
+          <rect class="sand" id="sandTop" x="14" y="24" width="20" height="0"></rect>
+          <rect class="sand" id="sandBot" x="14" y="26" width="20" height="13"></rect>
+          <rect class="sand" id="sandFall" x="23" y="23" width="2" height="0"></rect>
+        </g>
+        <path class="g-line" d="M15 9H33V14.500C33 20 26.500 22 26.500 24S33 28 33 33.500V39H15V33.500C15 28 21.500 26 21.500 24S15 20 15 14.500Z"></path>
+        <rect class="g-cap" x="10" y="4.500" width="28" height="6" rx="3"></rect>
+        <rect class="g-cap" x="10" y="37.500" width="28" height="6" rx="3"></rect>
+      </svg>
+      <div class="tbar" aria-hidden="true"><i id="tfill"></i></div>
+      <span id="tsay" class="vh" aria-live="polite"></span>
+    </div>
+    <button id="next" disabled>Avanti</button>
+  </div>
+  <div id="err" aria-live="polite"></div>
+</section>
+
+<section id="result" hidden aria-live="polite"></section>
+
+<section id="maint" class="maint" hidden aria-live="polite">
+  <h1>Sito in <em>manutenzione</em></h1>
+  <p class="lead">Stiamo sistemando alcune cose: il quiz tornerà disponibile a breve. Riprova più tardi.</p>
+</section>
+
+</main>
+<footer class="n-only n-credit">
+  <img src="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-dark="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-light="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo-rosso" draggable="false" alt="Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria">
+</footer>
+<script src="index.js"></script>
+</body></html>

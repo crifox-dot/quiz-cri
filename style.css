@@ -1,0 +1,269 @@
+:root{
+  --bg:#16120f;--panel:#201a16;--line:#3b332b;
+  --ink:#f4ede3;--mute:#b5a999;
+  --red:#d3141f;--red-hi:#f0434b;--ok:#6fcf97;
+  --sel-bg:#2a1c1a;--ko-ink:#ffb3b7;--dirty-ink:#ffd28a;
+  --brand-red:var(--red-hi);
+}
+/* modalita' chiara */
+html.light{
+  --bg:#f7f3ec;--panel:#ffffff;--line:#e2d8c9;
+  --ink:#1c140f;--mute:#6e6255;
+  --red:#d3141f;--red-hi:#b2101a;--ok:#1f7a45;
+  --sel-bg:#fbe4e2;--ko-ink:#8a1620;--dirty-ink:#8a5a06;
+  /* rosso del logo della Croce Rossa (preso dai loghi usati nel sito), solo per l'ultima
+     parola del titolo in modalita' chiara: non toccare --red-hi, usato anche altrove */
+  --brand-red:#cc0000;
+}
+/* alto contrasto e testo piu' spazioso */
+html.a11y{--mute:var(--ink)}
+html.a11y:not(.light){--line:#6b5d4e}
+html.a11y.light{--line:#c3b6a3}
+html.a11y body{letter-spacing:.02em;font-size:19px;font-weight:500}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:18px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;min-height:100vh}
+.top{padding:20px 20px 0;max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.top img{display:block;width:auto;height:auto;max-height:44px;max-width:55%}
+.topbtns{display:flex;gap:10px;flex:none}
+.topbtn{width:44px;height:44px;flex:none;padding:0;border-radius:12px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);display:flex;align-items:center;justify-content:center}
+.topbtn svg{width:22px;height:22px;display:block}
+button.topbtn:hover:not(:disabled){background:var(--panel);border-color:var(--mute)}
+.topbtn[aria-pressed="true"]{border-color:var(--red-hi);color:var(--red-hi)}
+main{max-width:720px;margin:0 auto;padding:36px 20px 72px}
+h1{font:800 clamp(2.3rem,8vw,3.8rem)/1.02 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;letter-spacing:-.02em;margin:0 0 18px}
+h1 em{font:italic 400 1.12em/1 Georgia,"Times New Roman",serif;color:var(--brand-red);letter-spacing:0}
+.lead{color:var(--mute);margin:0 0 32px;max-width:52ch}
+[hidden]{display:none!important}
+
+/* quiz: una domanda per volta */
+.meta{display:flex;justify-content:space-between;color:var(--mute);font-size:.95rem;margin-bottom:10px}
+.progress{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:34px}
+.progress i{display:block;height:100%;width:0;background:var(--red);transition:width .25s}
+.qtext{font-family:inherit;font-weight:700;font-size:clamp(1.4rem,4.6vw,1.9rem);line-height:1.25;margin:0 0 24px}
+.opts label{display:block;position:relative;border:1px solid var(--line);background:var(--panel);
+  border-radius:14px;padding:16px 18px 16px 52px;margin:0 0 12px;cursor:pointer;
+  transition:border-color .15s,background .15s}
+.opts label:hover{border-color:var(--mute)}
+.opts input{position:absolute;left:18px;top:50%;width:20px;height:20px;margin:-10px 0 0;accent-color:var(--red)}
+.opts label:has(input:checked){border-color:var(--red-hi);background:var(--sel-bg)}
+.opts label:has(input:focus-visible){outline:3px solid var(--ink);outline-offset:2px}
+
+.actions{display:flex;gap:12px;align-items:center;margin-top:28px}
+button{font-family:inherit;font-weight:700;font-size:1rem;border:0;border-radius:999px;padding:14px 28px;cursor:pointer;
+  background:var(--red);color:#fff}
+button:hover:not(:disabled){background:var(--red-hi)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.ghost:hover{border-color:var(--mute);background:transparent}
+button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+
+/* risultato */
+.msg{margin:0 0 22px;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}
+.msg.ok{border-color:var(--ok);color:var(--ok)}
+.msg.ko{border-color:var(--red-hi);color:var(--ko-ink)}
+.hint{color:var(--mute);font-size:.95rem;margin-top:16px;max-width:46ch}
+
+/* biglietto col codice */
+.ticket{max-width:360px;margin:0 auto;border-radius:24px;overflow:hidden;background:var(--panel);
+  box-shadow:0 24px 60px -24px rgba(0,0,0,.65);border:1px solid var(--line);
+  touch-action:none;user-select:none;cursor:grab} /* "staccabile" col dito: vale per ogni biglietto */
+.ticket.dragging{cursor:grabbing}
+.ticket img{-webkit-user-drag:none}
+/* biglietto della caccia al tesoro: resta fermo in basso sullo schermo e "sale" da sotto il bordo,
+   come se uscisse da una fessura, ad ogni tappa trovata */
+.ticket.docked{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  margin:0 auto;z-index:40;transition:transform .6s ease}
+.ticket-top{background:linear-gradient(165deg,var(--red-hi),var(--red) 75%);color:#fff;
+  padding:20px 24px 18px;text-align:center}
+.ticket-logo{display:block;height:132px;width:auto;margin:0 auto 14px}
+.ticket-event{margin:0;font-weight:700;font-size:clamp(1.15rem,5.2vw,1.4rem);line-height:1.3}
+.ticket-perf{position:relative;height:0;border-top:2px dashed var(--line)}
+.ticket-perf .notch{position:absolute;top:50%;width:26px;height:26px;border-radius:50%;
+  background:var(--bg);transform:translateY(-50%)}
+.ticket-perf .notch-l{left:-13px}
+.ticket-perf .notch-r{right:-13px}
+.ticket-bottom{background:#fff;padding:30px 24px 26px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.ticket-qr{display:inline-block;padding:4px}
+.ticket-qr img{display:block;width:min(168px,48vw);height:auto;transition:filter .6s ease}
+.ticket-code{margin-top:18px;font:700 clamp(1.5rem,7vw,2.1rem)/1 ui-monospace,"SFMono-Regular",Menlo,monospace;
+  letter-spacing:.08em;color:#1b1310;word-break:break-all;transition:filter .6s ease}
+.ticket-note{margin:10px 0 0;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:#9a9086}
+/* finche' non si trovano tutte le tappe della caccia al tesoro, QR e codice restano sfocati */
+.ticket.locked .ticket-qr img,.ticket.locked .ticket-code{filter:blur(10px);user-select:none}
+.ticket.locked .ticket-code{color:#1b1310}
+
+/* admin */
+label.field{display:block;font-weight:600;margin-bottom:6px}
+input[type=password],input[type=text]{width:100%;padding:14px 16px;font:inherit;color:var(--ink);
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:16px}
+input[type=password]:focus,input[type=text]:focus{border-color:var(--red-hi)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* editor domande */
+input[type=number]{width:6rem;padding:12px 14px;font:inherit;color:var(--ink);background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;margin:0 8px 0 0}
+input[type=number]:focus,textarea:focus,.optrow input[type=text]:focus{border-color:var(--red-hi)}
+textarea{display:block;width:100%;padding:12px 14px;font:inherit;color:var(--ink);background:var(--bg);
+  border:1px solid var(--line);border-radius:12px;resize:vertical;min-height:3.4em;margin-bottom:10px}
+.passbox{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:16px 18px;margin:0 0 22px}
+.passbox .field{margin-bottom:10px}
+.qcard{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:18px;margin:0 0 18px;min-width:0}
+.qhead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.qtools{display:flex;gap:6px;flex-wrap:wrap}
+.optrow{display:flex;gap:10px;align-items:center;margin:0 0 10px}
+.optrow input[type=radio]{flex:none;width:22px;height:22px;accent-color:var(--red)}
+.optrow input[type=text]{flex:1;min-width:0;margin:0;padding:10px 12px;background:var(--bg)}
+button.small{padding:8px 14px;font-size:.9rem}
+button.danger{background:transparent;color:var(--ko-ink);border:1px solid var(--red-hi)}
+button.danger:hover:not(:disabled){background:var(--sel-bg)}
+.savebar{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);
+  padding:14px 0;margin-top:26px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.state{color:var(--mute);font-size:.95rem;margin-left:auto}
+.state.dirty{color:var(--dirty-ink)}
+
+/* senza stili scritti dentro le pagine (richiesto dalla Content-Security-Policy) */
+.plain{border:0;padding:0;margin:0}
+legend.qtext{padding:0}
+.mt18{margin-top:18px}
+.mt22{margin-top:22px}
+.actions.flush{margin-top:0}
+
+/* caccia al tesoro: QR delle tappe, da salvare come immagini (tasto destro o tenendo premuto) */
+label.field input[type=checkbox]{width:auto;margin:0 8px 0 0;vertical-align:middle;accent-color:var(--red)}
+label.field input[type=checkbox]:disabled{cursor:not-allowed}
+label.field:has(input[type=checkbox]:disabled){color:var(--mute)}
+.hunt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin:18px 0}
+.hunt-item{border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px;text-align:center}
+.hunt-item img{display:block;width:100%;height:auto;margin:0 auto 10px}
+.hunt-item p{margin:0;color:#1c140f;font:700 .95rem/1.3 inherit}
+.hunt-item p.qcount{margin-top:2px;color:#6e6255;font:400 .78rem/1.3 inherit}
+.hunt-item span{display:block;margin-top:4px;color:#6e6255;font:.78rem/1.3 ui-monospace,"SFMono-Regular",Menlo,monospace}
+.n-only{display:none}
+/* biglietto completo della caccia al tesoro: entra salendo dal basso, poi resta nella pagina */
+.ticket.rise{animation:ticketRise .6s ease}
+@keyframes ticketRise{from{transform:translateY(var(--rise-from,100vh))}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.ticket.rise{animation:none}}
+/* testo solo per i lettori di schermo */
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+/* caccia al tesoro con domande sparse: risposta gia' data e risultata sbagliata (resta segnata, non si puo' riscegliere) */
+.opts label.was-wrong{border-color:var(--red-hi);background:rgba(204,0,0,.16);cursor:not-allowed}
+.opts label.was-wrong > span:not(.vh)::after{content:"  ✕";color:var(--red-hi);font-weight:700}
+/* modalita' manutenzione: avviso al posto del quiz / del pannello admin, e stato nel pannello domande */
+.maint{padding-top:12px}
+.maint-state{margin:0 0 14px;font-weight:700}
+.maint-state::before{content:"";display:inline-block;width:12px;height:12px;margin:0 9px 2px 0;vertical-align:middle;
+  border-radius:50%;border:2px solid currentColor;background:var(--ok)}
+.maint-state.on::before{background:var(--red-hi)}
+/* colori dei QR code (pannello domande) */
+.qrcolors{display:flex;flex-wrap:wrap;gap:16px 22px;align-items:flex-end;margin-bottom:10px}
+.qrcolor{flex:1 1 170px;min-width:0}
+.qrcolor-row{display:flex;gap:10px;align-items:center}
+.qrcolor-row input[type=text]{flex:1;min-width:0;margin:0;text-transform:uppercase;
+  font-family:ui-monospace,"SFMono-Regular",Menlo,monospace;letter-spacing:.04em}
+.qrcolor-row input[type=color]{flex:none;width:52px;height:48px;padding:3px;border:1px solid var(--line);
+  border-radius:12px;background:var(--panel);cursor:pointer}
+.qr-preview{flex:none;display:block;width:116px;height:116px;border:1px solid var(--line);border-radius:10px;image-rendering:pixelated}
+.qr-preview:not([src]){visibility:hidden}
+.qr-preview.bad{opacity:.3}
+.qrcolor-row input.bad{border-color:var(--red-hi)}
+#qrColorMsg:empty{display:none}
+/* richieste di oggi a Cloudflare (pannello domande): barra come quella delle domande del quiz */
+.usage .field{display:block}
+.usage-row{display:flex;align-items:center;gap:14px;margin:8px 0 4px}
+.usage .progress{flex:1;margin:0;height:8px}
+.usage-count{flex:none;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.usage.high .progress i{background:var(--dirty-ink)}
+.usage .hint{margin:8px 0 12px}
+
+/* ---------- modalita' classifica ---------- */
+/* nickname nella schermata iniziale */
+.nickbox{margin:0 0 20px;max-width:420px}
+.nickbox input{margin-bottom:8px}
+.nickbox .hint{margin:0}
+.nickbox .hint.ko{color:var(--ko-ink);font-weight:700}
+.nickbox input.bad{border-color:var(--red-hi)}
+.nickas{margin:0 0 20px;font-weight:600;color:var(--ink)}
+.boardbtn{display:block;margin-top:14px}
+/* punti e fiammella (serie piu' lunga di risposte giuste di fila) */
+.xp{display:flex;align-items:center;justify-content:center;gap:18px;margin:0 0 20px}
+.xp-num{display:flex;flex-direction:column;align-items:center;line-height:1}
+.xp-num b{font-size:3.2rem;font-weight:800;font-variant-numeric:tabular-nums}
+.xp-num span{margin-top:6px;font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.flame{display:inline-flex;align-items:center;gap:3px;flex:none;font-weight:800;color:var(--flame);font-variant-numeric:tabular-nums}
+.flame i{display:block;width:1.15em;height:1.15em;background:currentColor;
+  -webkit-mask:url(icone/fiamma.svg) center/contain no-repeat;mask:url(icone/fiamma.svg) center/contain no-repeat}
+.xp .flame{font-size:1.9rem}
+:root{--flame:#ffa033}
+html.light{--flame:#c2410c}
+/* domande sbagliate (solo quali, mai la risposta giusta) e classifica */
+.wrong,.board{margin:0 0 20px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);text-align:left}
+.wrong h2,.board h2{margin:0 0 10px;font-size:1.05rem;font-weight:700}
+.wrong ul{margin:0;padding-left:1.2em}
+.wrong li{margin:0 0 6px}
+.wrong li::marker{color:var(--red-hi)}
+.board ol{list-style:none;margin:0;padding:0}
+.board li{display:flex;align-items:center;gap:10px;padding:9px 8px;border-bottom:1px solid var(--line)}
+.board li:last-child{border-bottom:0}
+.board li.me{background:var(--sel-bg);border-radius:10px;font-weight:700;border-bottom-color:transparent}
+.board li.gap{justify-content:center;padding:2px 8px;color:var(--mute);border-bottom:0}
+.board .pos{flex:none;min-width:2.4em;color:var(--mute);font-variant-numeric:tabular-nums}
+.board .who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .pts{flex:none;font-weight:700;font-variant-numeric:tabular-nums}
+.board .hint{margin:10px 0 0}
+.board .del{flex:none;padding:6px 12px;font-size:.85rem}
+#adminBoard:empty{display:none}
+#adminBoard .hint + h2,#adminBoard ol + h2{margin-top:18px}
+#adminBoard li{flex-wrap:wrap}
+#adminBoard .who{flex:1 1 5.5em;white-space:normal;overflow-wrap:anywhere}
+
+/* ---------- timer delle domande (modalita' classifica) ---------- */
+/* Sta nella riga dei pulsanti, al posto di Indietro (che col timer non c'e'), allineato ad Avanti.
+   Una clessidra e una barra che si svuota. La clessidra e' ferma con la sabbia in basso; finita l'attesa si
+   gira e la sabbia scende, fino a essere tutta in basso a tempo scaduto. Il colore dice la fase: verde,
+   giallo, rosso. A tempo scaduto la barra si ritira e resta solo la clessidra in un pallino. */
+.timer{--t-col:var(--ok);--t-ink:var(--ink);display:flex;align-items:center;gap:10px;box-sizing:border-box;flex:1 1 52px;min-width:52px;max-width:260px;height:52px;
+  padding:5px 14px 5px 5px;border:2px solid var(--ink);border-radius:999px;background:var(--panel);overflow:hidden;
+  transition:flex-grow .55s cubic-bezier(.6,0,.3,1),padding .55s,gap .55s}
+.timer[hidden]{display:none}
+.timer.yellow{--t-col:#f2c230}
+.timer.red{--t-col:var(--red-hi)}
+.timer.over{--t-col:var(--mute);flex-grow:0;gap:0;padding-right:5px}
+.timer .glass{flex:none;display:block;width:38px;height:38px;overflow:visible}
+.timer .glass .g-body{fill:var(--bg);stroke:none}
+.timer .glass .g-line{fill:none;stroke:var(--t-ink);stroke-width:2.6;stroke-linejoin:round}
+.timer .glass .g-cap{fill:var(--t-ink)}
+.timer .glass .sand{fill:var(--t-col)}
+.timer .tbar{flex:1 1 0;min-width:0;height:14px;box-sizing:border-box;border:2px solid var(--ink);border-radius:999px;background:var(--bg);overflow:hidden;
+  transition:flex-grow .55s cubic-bezier(.6,0,.3,1),opacity .3s,border-width .55s}
+.timer .tbar i{display:block;height:100%;width:100%;background:var(--t-col);border-radius:999px}
+.timer.over .tbar{flex-grow:0;opacity:0;border-width:0}
+html.light .timer.yellow{--t-col:#e0a800}
+/* la clessidra si gira: parte capovolta (sabbia in basso, com'era da ferma) e torna dritta, con la sabbia in alto */
+@keyframes hgFlip{from{transform:rotate(180deg)}to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:no-preference){
+  .timer.flip .glass{transform-origin:50% 50%;animation:hgFlip .55s cubic-bezier(.5,0,.3,1.3)}
+}
+@media (prefers-reduced-motion:reduce){.timer,.timer .tbar{transition:none}}
+/* parole bloccate aggiunte dall'editor */
+.nwlist{list-style:none;margin:14px 0;padding:0}
+.nwlist li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.nwlist li:last-child{border-bottom:0}
+.nwlist li.hint{margin:0}
+.nwlist b{font-family:ui-monospace,"SFMono-Regular",Menlo,monospace}
+.nwlist .how{flex:1;min-width:8em;color:var(--mute);font-size:.9rem}
+#nwMsg:empty{display:none}
+#lbTimerSec.bad{border-color:var(--red-hi)}
+/* elenco delle parole aggiunte: comprimibile */
+.nwbox{margin:14px 0;border:1px solid var(--line);border-radius:12px;padding:0 14px}
+.nwbox summary{padding:12px 0;font-weight:700;cursor:pointer}
+.nwbox summary:focus-visible{outline:3px solid var(--ink);outline-offset:2px;border-radius:6px}
+.nwbox .nwlist{margin:0 0 6px}
+
+/* Loghi del Comitato: arrivano dal Worker (non stanno su GitHub). Qui si toglie cio' che invita a salvarli:
+   niente trascinamento, niente menu "salva immagine" col tasto destro o tenendo premuto (il tocco passa alla
+   pagina sotto). Non e' una protezione assoluta: uno screenshot resta sempre possibile. */
+img[data-logo-dark],.ticket-logo{pointer-events:none;-webkit-user-drag:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}

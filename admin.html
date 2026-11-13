@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' https://steep-haze-2da0.cloudflare-vbmev.workers.dev; connect-src https://steep-haze-2da0.cloudflare-vbmev.workers.dev; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#16120f">
+<meta name="robots" content="noindex">
+<title>Pannello admin · Quiz sull'HIV</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="nuova.css">
+</head>
+<body>
+<header class="top">
+  <div class="n-only n-sticker" aria-hidden="true"><b id="nWord1">QUIZ</b><b id="nWord2">HIV</b></div>
+  <img id="logo" src="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-dark="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-light="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo-rosso" draggable="false" alt="Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria">
+  <div class="topbtns">
+    <button id="btnA11y" class="topbtn" type="button" aria-pressed="false" aria-label="Alto contrasto e testo più spazioso" title="Alto contrasto">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="10"></circle>
+        <circle cx="12" cy="7" r="1.6" fill="currentColor" stroke="none"></circle>
+        <path d="M6.3 10.1c1.7.9 3.7 1.4 5.7 1.4s4-.5 5.7-1.4"></path>
+        <path d="M12 11.5v3.2l-2.6 4.6M12 14.7l2.6 4.6"></path>
+      </svg>
+    </button>
+    <button id="btnLight" class="topbtn" type="button" aria-pressed="false" aria-label="Modalità chiara" title="Modalità chiara">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="4.2"></circle>
+        <path d="M12 2.5v2.3M12 19.2v2.3M21.5 12h-2.3M4.8 12H2.5M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6M18.4 18.4l-1.6-1.6M7.2 7.2 5.6 5.6"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+<main>
+<h1 id="adminTitle">Pannello <em>admin</em></h1>
+
+<section id="maint" class="maint" hidden aria-live="polite">
+  <p class="lead">Il sito è in manutenzione: il pannello admin non è disponibile. Riprova più tardi.</p>
+</section>
+
+<!-- Stato del codice scansionato, visibile a chiunque (sola lettura: non lo consuma). Non si rivela da solo: serve un tocco. -->
+<section id="status" hidden>
+  <p class="lead">Hai aperto un codice da un QR. Puoi controllare se è ancora valido, senza consumarlo.</p>
+  <button id="statusCheck">Verifica il codice</button>
+  <div id="statusMsg" aria-live="polite" class="mt18"></div>
+</section>
+
+<section id="login" hidden>
+  <p class="lead" id="loginLead">Sei del Comitato? Accedi per convalidare i codici.</p>
+  <label class="field" for="pw">Password</label>
+  <input id="pw" type="password" autocomplete="current-password">
+  <button id="enter">Accedi</button>
+  <div id="loginMsg" aria-live="polite" class="mt18"></div>
+</section>
+
+<section id="panel" hidden>
+  <div id="verifyBox">
+    <p class="lead">Collegato. Scansionando un QR, il codice arriva già scritto qui sotto: premi Convalida per confermarlo e segnarlo come usato. Puoi anche scriverlo a mano.</p>
+    <div id="res" aria-live="polite"></div>
+    <label class="field" for="code">Codice da convalidare</label>
+    <input id="code" type="text" autocomplete="off" placeholder="XXXX-XXXX">
+    <div class="actions flush">
+      <button id="check">Convalida codice</button>
+    </div>
+  </div>
+  <!-- Modalita' classifica: al posto della convalida (o insieme, se il biglietto resta attivo) -->
+  <div id="boardBox" class="mt22" hidden>
+    <p class="lead" id="boardLead">Collegato. Qui sotto c'è la classifica completa.</p>
+    <div class="board" id="adminBoard" aria-live="polite"></div>
+    <div id="boardMsg" aria-live="polite"></div>
+    <div class="actions flush">
+      <button id="boardRefresh" class="ghost small" type="button">Aggiorna classifica</button>
+      <button id="boardClear" class="danger small" type="button">Elimina tutta la classifica</button>
+    </div>
+    <p class="hint">Ogni giocatore sparisce da solo 7 giorni dopo aver giocato. Cancellando un nickname (o tutta la classifica) quel nome torna libero e chi lo aveva può giocare di nuovo.</p>
+  </div>
+  <div id="res2" aria-live="polite"></div>
+  <div class="actions mt22">
+    <button id="logout" class="ghost">Esci</button>
+  </div>
+</section>
+</main>
+<footer class="n-only n-credit">
+  <img src="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-dark="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo" data-logo-light="https://steep-haze-2da0.cloudflare-vbmev.workers.dev/img/logo-rosso" draggable="false" alt="Croce Rossa Italiana - Comitato di Francavilla Fontana - Oria">
+</footer>
+<script src="admin.js"></script>
+</body></html>
